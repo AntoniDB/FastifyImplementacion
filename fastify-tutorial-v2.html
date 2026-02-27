@@ -1,0 +1,2731 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fastify Modular — Tutorial Completo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #11111a;
+    --surface2: #1a1a28;
+    --border: #2a2a40;
+    --accent: #7c6aff;
+    --accent2: #ff6a9b;
+    --accent3: #6affcc;
+    --accent4: #ffb86a;
+    --text: #e8e8f0;
+    --muted: #7a7a9a;
+    --code-bg: #0d0d16;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; line-height: 1.7; overflow-x: hidden; }
+
+  /* SIDEBAR */
+  .sidebar { position: fixed; left: 0; top: 0; width: 270px; height: 100vh; background: var(--surface); border-right: 1px solid var(--border); overflow-y: auto; z-index: 100; padding: 24px 0; }
+  .sidebar-logo { padding: 0 24px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .sidebar-logo .logo-text { font-size: 20px; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .sidebar-logo .logo-sub { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+  .nav-section { padding: 8px 24px 4px; font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 24px; color: var(--muted); text-decoration: none; font-size: 13px; font-weight: 600; transition: all 0.2s; border-left: 2px solid transparent; cursor: pointer; }
+  .nav-item:hover, .nav-item.active { color: var(--text); background: var(--surface2); border-left-color: var(--accent); }
+  .nav-item .step-badge { width: 20px; height: 20px; background: var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-family: 'JetBrains Mono', monospace; flex-shrink: 0; }
+  .nav-item.active .step-badge { background: var(--accent); color: white; }
+
+  /* MAIN */
+  .main { margin-left: 270px; min-height: 100vh; }
+
+  /* HERO */
+  .hero { padding: 80px 60px 60px; border-bottom: 1px solid var(--border); position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -100px; right: -100px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(124,106,255,0.12) 0%, transparent 70%); pointer-events: none; }
+  .hero::after { content: ''; position: absolute; bottom: -80px; left: 100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(255,106,155,0.08) 0%, transparent 70%); pointer-events: none; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(124,106,255,0.1); border: 1px solid rgba(124,106,255,0.3); padding: 6px 14px; border-radius: 100px; font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--accent); margin-bottom: 24px; }
+  .hero h1 { font-size: clamp(36px, 4vw, 56px); font-weight: 800; line-height: 1.1; margin-bottom: 16px; }
+  .hero h1 span { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .hero p { font-size: 18px; color: var(--muted); max-width: 620px; margin-bottom: 32px; }
+  .hero-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag { background: var(--surface2); border: 1px solid var(--border); padding: 4px 12px; border-radius: 6px; font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--muted); }
+  .tag.green { border-color: rgba(106,255,204,0.3); color: var(--accent3); background: rgba(106,255,204,0.05); }
+  .tag.purple { border-color: rgba(124,106,255,0.3); color: var(--accent); background: rgba(124,106,255,0.05); }
+  .tag.pink { border-color: rgba(255,106,155,0.3); color: var(--accent2); background: rgba(255,106,155,0.05); }
+  .tag.yellow { border-color: rgba(255,184,106,0.3); color: var(--accent4); background: rgba(255,184,106,0.05); }
+
+  /* CONTENT */
+  .content { padding: 0 60px 80px; }
+
+  /* SECTION */
+  .section { padding: 60px 0 40px; border-bottom: 1px solid var(--border); }
+  .section:last-child { border-bottom: none; }
+  .section-header { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 32px; }
+  .step-number { width: 44px; height: 44px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; flex-shrink: 0; font-family: 'JetBrains Mono', monospace; }
+  .section-title { font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+  .section-desc { color: var(--muted); font-size: 14px; }
+
+  /* CODE */
+  .code-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 20px 0; }
+  .code-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .code-filename { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent3); }
+  .code-lang { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); background: var(--surface2); padding: 2px 8px; border-radius: 4px; }
+  .code-block pre { padding: 20px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.9; color: #cdd6f4; }
+  .cm { color: #585b70; font-style: italic; }
+
+  /* FOLDER TREE */
+  .folder-tree { background: var(--code-bg); border: 1px solid var(--border); border-radius: 12px; padding: 24px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 2.1; margin: 20px 0; }
+  .tree-dir { color: var(--accent); font-weight: 700; }
+  .tree-file { color: var(--text); }
+  .tree-comment { color: var(--muted); font-style: italic; }
+  .tree-layer { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 10px; margin-left: 8px; vertical-align: middle; }
+  .layer-routes { background: rgba(124,106,255,0.15); color: var(--accent); }
+  .layer-ctrl { background: rgba(255,106,155,0.15); color: var(--accent2); }
+  .layer-svc { background: rgba(106,255,204,0.15); color: var(--accent3); }
+  .layer-repo { background: rgba(255,184,106,0.15); color: var(--accent4); }
+
+  /* CALLOUTS */
+  .callout { border-radius: 10px; padding: 16px 20px; margin: 16px 0; display: flex; gap: 14px; align-items: flex-start; font-size: 14px; }
+  .callout-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .callout.info { background: rgba(124,106,255,0.08); border: 1px solid rgba(124,106,255,0.2); }
+  .callout.warning { background: rgba(255,184,106,0.08); border: 1px solid rgba(255,184,106,0.2); }
+  .callout.success { background: rgba(106,255,204,0.08); border: 1px solid rgba(106,255,204,0.2); }
+  .callout.danger { background: rgba(255,106,155,0.08); border: 1px solid rgba(255,106,155,0.2); }
+  .callout.info .callout-title { color: var(--accent); }
+  .callout.warning .callout-title { color: var(--accent4); }
+  .callout.success .callout-title { color: var(--accent3); }
+  .callout.danger .callout-title { color: var(--accent2); }
+  .callout-title { font-weight: 700; margin-bottom: 4px; }
+  .callout p { color: var(--muted); line-height: 1.6; margin: 0; }
+
+  code { font-family: 'JetBrains Mono', monospace; background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-size: 13px; color: var(--accent3); }
+
+  /* LAYER DIAGRAM */
+  .layer-diagram { display: flex; flex-direction: column; gap: 0; margin: 24px 0; max-width: 520px; }
+  .layer-box { padding: 14px 20px; border-radius: 0; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; }
+  .layer-box:first-child { border-radius: 10px 10px 0 0; }
+  .layer-box:last-child { border-radius: 0 0 10px 10px; }
+  .layer-box.routes { background: rgba(124,106,255,0.15); border: 1px solid rgba(124,106,255,0.3); border-bottom: none; }
+  .layer-box.controller { background: rgba(255,106,155,0.1); border: 1px solid rgba(255,106,155,0.25); border-bottom: none; }
+  .layer-box.service { background: rgba(106,255,204,0.1); border: 1px solid rgba(106,255,204,0.25); border-bottom: none; }
+  .layer-box.repo { background: rgba(255,184,106,0.1); border: 1px solid rgba(255,184,106,0.25); border-bottom: none; }
+  .layer-box.db { background: rgba(100,100,150,0.1); border: 1px solid rgba(100,100,150,0.25); }
+  .layer-badge { font-size: 11px; font-family: 'JetBrains Mono', monospace; opacity: 0.7; }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .card h4 { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--accent); }
+  .card p { font-size: 13px; color: var(--muted); margin: 0; }
+
+  /* COMPARE */
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+  .compare-box { background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .compare-box.bad { border-color: rgba(255,106,155,0.3); }
+  .compare-box.good { border-color: rgba(106,255,204,0.3); }
+  .compare-header { padding: 10px 16px; font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .compare-box.bad .compare-header { background: rgba(255,106,155,0.1); color: var(--accent2); }
+  .compare-box.good .compare-header { background: rgba(106,255,204,0.1); color: var(--accent3); }
+  .compare-box pre { padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.8; color: #cdd6f4; overflow-x: auto; }
+
+  h2 { font-size: 20px; font-weight: 700; margin: 28px 0 12px; }
+  h3 { font-size: 15px; font-weight: 700; margin: 20px 0 10px; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+  p { color: var(--muted); margin-bottom: 12px; font-size: 15px; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .progress-bar { position: fixed; top: 0; left: 270px; right: 0; height: 2px; background: var(--border); z-index: 200; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); width: 0%; transition: width 0.1s; }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .hero, .content { padding-left: 24px; padding-right: 24px; }
+    .progress-bar { left: 0; }
+    .grid-2, .compare { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-text">⚡ Fastify API</div>
+    <div class="logo-sub">// JS funcional · sin clases</div>
+  </div>
+
+  <div class="nav-section">Fundamentos</div>
+  <a class="nav-item active" href="#inicio-arq" onclick="setActive(this)"><span class="step-badge">→</span> Introducción</a>
+  <a class="nav-item" href="#paso-1" onclick="setActive(this)"><span class="step-badge">01</span> Instalación</a>
+  <a class="nav-item" href="#paso-2" onclick="setActive(this)"><span class="step-badge">02</span> Estructura</a>
+  <a class="nav-item" href="#paso-3" onclick="setActive(this)"><span class="step-badge">03</span> Entorno (.env)</a>
+  <a class="nav-item" href="#paso-4" onclick="setActive(this)"><span class="step-badge">04</span> App + Plugins</a>
+
+  <div class="nav-section">Prisma + BD</div>
+  <a class="nav-item" href="#paso-5" onclick="setActive(this)"><span class="step-badge">05</span> Prisma ORM</a>
+
+  <div class="nav-section">Módulo Ventas</div>
+  <a class="nav-item" href="#paso-6" onclick="setActive(this)"><span class="step-badge">06</span> Repository</a>
+  <a class="nav-item" href="#paso-7" onclick="setActive(this)"><span class="step-badge">07</span> Service</a>
+  <a class="nav-item" href="#paso-8" onclick="setActive(this)"><span class="step-badge">08</span> Controller</a>
+  <a class="nav-item" href="#paso-9" onclick="setActive(this)"><span class="step-badge">09</span> Routes + Schema</a>
+  <a class="nav-item" href="#paso-10" onclick="setActive(this)"><span class="step-badge">10</span> Módulo (Plugin)</a>
+  <a class="nav-item" href="#paso-11" onclick="setActive(this)"><span class="step-badge">11</span> Subida de Archivos</a>
+
+  <div class="nav-section">Seguridad</div>
+  <a class="nav-item" href="#paso-12" onclick="setActive(this)"><span class="step-badge">12</span> Auth + JWT</a>
+  <a class="nav-item" href="#paso-12b" onclick="setActive(this)"><span class="step-badge">12+</span> Auth.js / Better Auth</a>
+  <a class="nav-item" href="#paso-13" onclick="setActive(this)"><span class="step-badge">13</span> Roles y Permisos</a>
+  <a class="nav-item" href="#paso-14" onclick="setActive(this)"><span class="step-badge">14</span> CORS</a>
+  <a class="nav-item" href="#paso-15" onclick="setActive(this)"><span class="step-badge">15</span> Rate Limiting</a>
+  <a class="nav-item" href="#paso-16" onclick="setActive(this)"><span class="step-badge">16</span> SQL Injection</a>
+
+  <div class="nav-section">Infraestructura</div>
+  <a class="nav-item" href="#paso-17" onclick="setActive(this)"><span class="step-badge">17</span> Redis Cache</a>
+  <a class="nav-item" href="#paso-18" onclick="setActive(this)"><span class="step-badge">18</span> Errores Globales</a>
+  <a class="nav-item" href="#paso-19" onclick="setActive(this)"><span class="step-badge">19</span> Logs</a>
+  <a class="nav-item" href="#paso-20" onclick="setActive(this)"><span class="step-badge">20</span> Paginación</a>
+  <a class="nav-item" href="#paso-21" onclick="setActive(this)"><span class="step-badge">21</span> Swagger</a>
+  <a class="nav-item" href="#paso-22" onclick="setActive(this)"><span class="step-badge">22</span> Resumen Final</a>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HERO -->
+  <div class="hero" id="inicio">
+    <div class="hero-badge">⚡ JavaScript Funcional · Sin Clases · Sin TypeScript</div>
+    <h1>API de Ventas con<br><span>Fastify Modular</span></h1>
+    <p>Tutorial completo usando funciones puras, arquitectura modular con capas, autenticación, caché, seguridad y documentación. Sin clases, sin TypeScript.</p>
+    <div class="hero-tags">
+      <span class="tag purple">Fastify 4</span>
+      <span class="tag green">Prisma ORM</span>
+      <span class="tag green">PostgreSQL</span>
+      <span class="tag yellow">Redis Cache</span>
+      <span class="tag pink">JWT Auth</span>
+      <span class="tag purple">Roles RBAC</span>
+      <span class="tag green">Zod Schemas</span>
+      <span class="tag yellow">Swagger UI</span>
+      <span class="tag pink">Rate Limiting</span>
+      <span class="tag purple">Pino Logs</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- INTRO ARQUITECTURA -->
+    <div class="section" id="inicio-arq">
+      <h2>La arquitectura que vamos a usar</h2>
+      <p>Cada módulo tiene 4 capas. Las dependencias fluyen siempre hacia abajo — nunca hacia arriba.</p>
+
+      <div class="layer-diagram">
+        <div class="layer-box routes">
+          <span>🔗 routes.js</span>
+          <span class="layer-badge">registra endpoints en Fastify</span>
+        </div>
+        <div class="layer-box controller">
+          <span>🎮 controller.js</span>
+          <span class="layer-badge">maneja request / response HTTP</span>
+        </div>
+        <div class="layer-box service">
+          <span>⚙️ service.js</span>
+          <span class="layer-badge">lógica y reglas de negocio</span>
+        </div>
+        <div class="layer-box repo">
+          <span>📦 repository.js</span>
+          <span class="layer-badge">solo habla con la base de datos</span>
+        </div>
+        <div class="layer-box db">
+          <span>🗄️ PostgreSQL + Redis</span>
+          <span class="layer-badge">persistencia · caché</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4>📦 Repository</h4>
+          <p>Solo consultas a la BD. <code>getAll</code>, <code>getById</code>, <code>create</code>, <code>deleteById</code>. Sin lógica de negocio, sin errores HTTP.</p>
+        </div>
+        <div class="card">
+          <h4>⚙️ Service</h4>
+          <p>Decide si la operación se puede ejecutar. Valida reglas, coordina múltiples repositorios, ejecuta transacciones cuando hay atomicidad.</p>
+        </div>
+        <div class="card">
+          <h4>🎮 Controller</h4>
+          <p>Solo maneja HTTP. Extrae datos del request, llama al service, devuelve la respuesta con el código correcto.</p>
+        </div>
+        <div class="card">
+          <h4>🔗 Routes</h4>
+          <p>Registra los endpoints en Fastify. Define el schema de validación y asigna los middlewares (auth, roles).</p>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <span class="callout-icon">💡</span>
+        <div>
+          <div class="callout-title">Regla de oro sobre transacciones</div>
+          <p>Cuando una operación involucra varias tablas, tiene validaciones previas o debe ser atómica → va en el Service usando una transacción Prisma. El Repository solo habla con su propia tabla.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 1 -->
+    <div class="section" id="paso-1">
+      <div class="section-header">
+        <div class="step-number">01</div>
+        <div>
+          <div class="section-title">Instalación</div>
+          <div class="section-desc">Node.js 18+ requerido. Usamos ES Modules (import/export).</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">💻 terminal</span><span class="code-lang">bash</span></div>
+        <pre>mkdir ventas-api && cd ventas-api
+npm init -y</pre>
+      </div>
+
+      <h3>// dependencias de producción</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">💻 terminal</span><span class="code-lang">bash</span></div>
+        <pre>npm install fastify fastify-plugin \
+  @fastify/jwt @fastify/cors @fastify/multipart \
+  @fastify/swagger @fastify/swagger-ui \
+  @fastify/rate-limit @fastify/sensible \
+  @fastify/static \
+  @prisma/client \
+  ioredis \
+  zod \
+  dotenv \
+  bcryptjs</pre>
+      </div>
+
+      <h3>// dependencias de desarrollo</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">💻 terminal</span><span class="code-lang">bash</span></div>
+        <pre>npm install -D nodemon prisma</pre>
+      </div>
+
+      <h3>// package.json</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 package.json</span><span class="code-lang">json</span></div>
+        <pre>{
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/main.js",
+    "start": "node src/main.js",
+    "db:migrate": "prisma migrate dev",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio"
+  }
+}</pre>
+      </div>
+
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <div>
+          <div class="callout-title">"type": "module" es obligatorio</div>
+          <p>Esto activa ES Modules. Todos los archivos usarán <code>import/export</code> en lugar de <code>require</code>. Asegúrate de tener Node.js 18 o superior con <code>node --version</code>.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 2 -->
+    <div class="section" id="paso-2">
+      <div class="section-header">
+        <div class="step-number">02</div>
+        <div>
+          <div class="section-title">Estructura de Carpetas</div>
+          <div class="section-desc">Un módulo por dominio de negocio, 4 capas por módulo.</div>
+        </div>
+      </div>
+
+      <div class="folder-tree">
+<span class="tree-dir">ventas-api/</span>
+├── <span class="tree-dir">src/</span>
+│   ├── <span class="tree-file">main.js</span>                    <span class="tree-comment"># entry point</span>
+│   ├── <span class="tree-file">app.js</span>                     <span class="tree-comment"># configuración Fastify</span>
+│   │
+│   ├── <span class="tree-dir">config/</span>
+│   │   └── <span class="tree-file">env.js</span>                 <span class="tree-comment"># validación de variables de entorno</span>
+│   │
+│   ├── <span class="tree-dir">modules/</span>
+│   │   ├── <span class="tree-dir">sales/</span>
+│   │   │   ├── <span class="tree-file">sales.module.js</span>       <span class="tree-comment"># plugin Fastify — registra el módulo</span>
+│   │   │   ├── <span class="tree-file">sales.routes.js</span>       <span class="tree-layer layer-routes">Routes</span>
+│   │   │   ├── <span class="tree-file">sales.controller.js</span>   <span class="tree-layer layer-ctrl">Controller</span>
+│   │   │   ├── <span class="tree-file">sales.service.js</span>      <span class="tree-layer layer-svc">Service</span>
+│   │   │   ├── <span class="tree-file">sales.repository.js</span>   <span class="tree-layer layer-repo">Repository</span>
+│   │   │   └── <span class="tree-file">sales.schema.js</span>       <span class="tree-comment"># schemas Zod</span>
+│   │   │
+│   │   └── <span class="tree-dir">auth/</span>
+│   │       ├── <span class="tree-file">auth.module.js</span>
+│   │       ├── <span class="tree-file">auth.routes.js</span>
+│   │       ├── <span class="tree-file">auth.controller.js</span>
+│   │       ├── <span class="tree-file">auth.service.js</span>
+│   │       └── <span class="tree-file">auth.schema.js</span>
+│   │
+│   └── <span class="tree-dir">shared/</span>
+│       ├── <span class="tree-dir">plugins/</span>
+│       │   ├── <span class="tree-file">prisma.plugin.js</span>
+│       │   ├── <span class="tree-file">jwt.plugin.js</span>
+│       │   ├── <span class="tree-file">cors.plugin.js</span>
+│       │   ├── <span class="tree-file">redis.plugin.js</span>
+│       │   └── <span class="tree-file">swagger.plugin.js</span>
+│       ├── <span class="tree-dir">middlewares/</span>
+│       │   ├── <span class="tree-file">auth.middleware.js</span>
+│       │   └── <span class="tree-file">roles.middleware.js</span>
+│       ├── <span class="tree-dir">errors/</span>
+│       │   └── <span class="tree-file">error-handler.js</span>
+│       └── <span class="tree-dir">utils/</span>
+│           ├── <span class="tree-file">pagination.js</span>
+│           └── <span class="tree-file">sanitize.js</span>
+│
+├── <span class="tree-dir">prisma/</span>
+│   └── <span class="tree-file">schema.prisma</span>
+├── <span class="tree-dir">uploads/</span>
+├── <span class="tree-file">.env</span>
+└── <span class="tree-file">package.json</span>
+      </div>
+    </div>
+
+    <!-- PASO 3 -->
+    <div class="section" id="paso-3">
+      <div class="section-header">
+        <div class="step-number">03</div>
+        <div>
+          <div class="section-title">Variables de Entorno</div>
+          <div class="section-desc">Validadas con Zod al arrancar. Si falta algo, la app no inicia.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 .env</span><span class="code-lang">env</span></div>
+        <pre>NODE_ENV=development
+PORT=3000
+
+# PostgreSQL
+DATABASE_URL="postgresql://user:password@localhost:5432/ventas_db"
+
+# JWT
+JWT_SECRET=una_clave_secreta_muy_larga_minimo_32_caracteres
+JWT_EXPIRES_IN=7d
+
+# Redis
+REDIS_URL=redis://localhost:6379
+
+# Uploads
+UPLOAD_DIR=./uploads
+MAX_FILE_SIZE=5242880</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/config/env.js</span><span class="code-lang">js</span></div>
+        <pre>import 'dotenv/config'
+import { z } from 'zod'
+
+const schema = z.object({
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  PORT: z.string().default('3000'),
+  DATABASE_URL: z.string({ required_error: 'DATABASE_URL es requerida' }),
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET debe tener al menos 32 caracteres'),
+  JWT_EXPIRES_IN: z.string().default('7d'),
+  REDIS_URL: z.string().default('redis://localhost:6379'),
+  UPLOAD_DIR: z.string().default('./uploads'),
+  MAX_FILE_SIZE: z.string().default('5242880'),
+})
+
+const result = schema.safeParse(process.env)
+
+if (!result.success) {
+  console.error('❌ Variables de entorno inválidas:')
+  console.error(result.error.format())
+  process.exit(1)   <span class="cm">// falla rápido antes de que inicie la app</span>
+}
+
+export const env = result.data</pre>
+      </div>
+    </div>
+
+    <!-- PASO 4 -->
+    <div class="section" id="paso-4">
+      <div class="section-header">
+        <div class="step-number">04</div>
+        <div>
+          <div class="section-title">App + Entry Point</div>
+          <div class="section-desc">Configuración central de Fastify.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/app.js</span><span class="code-lang">js</span></div>
+        <pre>import Fastify from 'fastify'
+import sensible from '@fastify/sensible'
+import rateLimit from '@fastify/rate-limit'
+import { env } from './config/env.js'
+import { prismaPlugin } from './shared/plugins/prisma.plugin.js'
+import { jwtPlugin } from './shared/plugins/jwt.plugin.js'
+import { corsPlugin } from './shared/plugins/cors.plugin.js'
+import { redisPlugin } from './shared/plugins/redis.plugin.js'
+import { swaggerPlugin } from './shared/plugins/swagger.plugin.js'
+import { errorHandler } from './shared/errors/error-handler.js'
+import { authModule } from './modules/auth/auth.module.js'
+import { salesModule } from './modules/sales/sales.module.js'
+
+export function buildApp() {
+  const app = Fastify({
+    logger: {
+      level: env.NODE_ENV === 'production' ? 'info' : 'debug',
+      transport: env.NODE_ENV !== 'production'
+        ? { target: 'pino-pretty', options: { colorize: true } }
+        : undefined
+    }
+  })
+
+  <span class="cm">// plugins globales</span>
+  app.register(sensible)
+  app.register(prismaPlugin)
+  app.register(jwtPlugin)
+  app.register(corsPlugin)
+  app.register(redisPlugin)
+  app.register(swaggerPlugin)
+
+  <span class="cm">// rate limiting global: 100 req/min por IP</span>
+  app.register(rateLimit, {
+    max: 100,
+    timeWindow: '1 minute',
+    errorResponseBuilder: () => ({
+      statusCode: 429,
+      error: 'Too Many Requests',
+      message: 'Demasiadas peticiones. Intenta en 1 minuto.'
+    })
+  })
+
+  <span class="cm">// manejador global de errores</span>
+  app.setErrorHandler(errorHandler)
+
+  <span class="cm">// módulos</span>
+  app.register(authModule, { prefix: '/api/auth' })
+  app.register(salesModule, { prefix: '/api/sales' })
+
+  <span class="cm">// health check</span>
+  app.get('/health', async () => ({ status: 'ok', timestamp: new Date() }))
+
+  return app
+}
+</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/main.js</span><span class="code-lang">js</span></div>
+        <pre>import { buildApp } from './app.js'
+import { env } from './config/env.js'
+
+const app = buildApp()
+
+try {
+  await app.listen({ port: Number(env.PORT), host: '0.0.0.0' })
+  app.log.info(`🚀 http://localhost:${env.PORT}`)
+  app.log.info(`📚 Docs: http://localhost:${env.PORT}/docs`)
+} catch (err) {
+  app.log.error(err)
+  process.exit(1)
+}</pre>
+      </div>
+    </div>
+
+    <!-- PASO 5: PRISMA -->
+    <div class="section" id="paso-5">
+      <div class="section-header">
+        <div class="step-number">05</div>
+        <div>
+          <div class="section-title">Prisma ORM + PostgreSQL</div>
+          <div class="section-desc">Schema, migraciones y cliente compartido.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">💻 terminal</span><span class="code-lang">bash</span></div>
+        <pre>npx prisma init</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 prisma/schema.prisma</span><span class="code-lang">prisma</span></div>
+        <pre>generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  sales     Sale[]
+
+  @@map("users")
+}
+
+model Product {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  price       Decimal    @db.Decimal(10, 2)
+  stock       Int        @default(0)
+  imageUrl    String?
+  createdAt   DateTime   @default(now())
+  saleItems   SaleItem[]
+
+  @@map("products")
+}
+
+model Sale {
+  id        String     @id @default(uuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  total     Decimal    @db.Decimal(10, 2)
+  status    SaleStatus @default(PENDING)
+  items     SaleItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id        String  @id @default(uuid())
+  saleId    String
+  sale      Sale    @relation(fields: [saleId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+
+  @@map("sale_items")
+}
+
+enum Role     { USER ADMIN }
+enum SaleStatus { PENDING COMPLETED CANCELLED }</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">💻 terminal</span><span class="code-lang">bash</span></div>
+        <pre>npx prisma migrate dev --name init
+npx prisma generate</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/shared/plugins/prisma.plugin.js</span><span class="code-lang">js</span></div>
+        <pre>import fp from 'fastify-plugin'
+import { PrismaClient } from '@prisma/client'
+
+<span class="cm">// instancia única compartida en toda la app</span>
+export const prisma = new PrismaClient({ log: ['warn', 'error'] })
+
+export const prismaPlugin = fp(async (fastify) => {
+  fastify.decorate('prisma', prisma)
+  fastify.addHook('onClose', async () => {
+    await prisma.$disconnect()
+  })
+})</pre>
+      </div>
+    </div>
+
+    <!-- PASO 6: REPOSITORY -->
+    <div class="section" id="paso-6">
+      <div class="section-header">
+        <div class="step-number">06</div>
+        <div>
+          <div class="section-title">Repository — Capa de Datos</div>
+          <div class="section-desc">Solo funciones que hablan con la base de datos. Sin lógica de negocio.</div>
+        </div>
+      </div>
+
+      <div class="compare">
+        <div class="compare-box bad">
+          <div class="compare-header">❌ No hagas esto en el repository</div>
+          <pre>async function createSale(data) {
+  // validar stock aquí está MAL
+  // eso es lógica de negocio
+  if (product.stock === 0)
+    throw new Error('Sin stock')
+  ...
+}</pre>
+        </div>
+        <div class="compare-box good">
+          <div class="compare-header">✅ El repository solo persiste datos</div>
+          <pre>async function createSale(data) {
+  // solo ejecuta la query
+  // el service ya validó todo
+  return prisma.sale.create(...)
+}</pre>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.repository.js</span><span class="code-lang">js</span></div>
+        <pre>import { prisma } from '../../shared/plugins/prisma.plugin.js'
+
+export async function findAllSales({ page = 1, limit = 10, status, userId } = {}) {
+  const skip = (page - 1) * limit
+  const where = {}
+  if (status) where.status = status
+  if (userId) where.userId = userId
+
+  const [data, total] = await Promise.all([
+    prisma.sale.findMany({
+      where,
+      skip,
+      take: limit,
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        items: { include: { product: { select: { id: true, name: true } } } }
+      },
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.sale.count({ where })
+  ])
+
+  return { data, total }
+}
+
+export async function findSaleById(id) {
+  return prisma.sale.findUnique({
+    where: { id },
+    include: {
+      user: { select: { id: true, name: true, email: true } },
+      items: { include: { product: true } }
+    }
+  })
+}
+
+export async function createSale({ userId, items, total }) {
+  return prisma.sale.create({
+    data: {
+      userId,
+      total,
+      items: { create: items }
+    },
+    include: { items: { include: { product: true } } }
+  })
+}
+
+export async function updateSale(id, data) {
+  return prisma.sale.update({
+    where: { id },
+    data,
+    include: { items: { include: { product: true } } }
+  })
+}
+
+export async function deleteById(id) {
+  return prisma.sale.delete({ where: { id } })
+}</pre>
+      </div>
+    </div>
+
+    <!-- PASO 7: SERVICE -->
+    <div class="section" id="paso-7">
+      <div class="section-header">
+        <div class="step-number">07</div>
+        <div>
+          <div class="section-title">Service — Lógica de Negocio</div>
+          <div class="section-desc">Decide si la operación puede ejecutarse. Coordina repositorios. Ejecuta transacciones.</div>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <span class="callout-icon">⚙️</span>
+        <div>
+          <div class="callout-title">¿Cuándo usar una transacción?</div>
+          <p>Cuando una operación toca múltiples tablas y debe ser atómica: si algo falla, todo se revierte. Ejemplo: crear una venta y descontar stock al mismo tiempo.</p>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.service.js</span><span class="code-lang">js</span></div>
+        <pre>import { prisma } from '../../shared/plugins/prisma.plugin.js'
+import {
+  findAllSales,
+  findSaleById,
+  updateSale,
+  deleteById
+} from './sales.repository.js'
+import { buildPagination } from '../../shared/utils/pagination.js'
+
+export async function getAllSales(query) {
+  const { page, limit, status, userId } = query
+  const { data, total } = await findAllSales({ page, limit, status, userId })
+  return buildPagination(data, total, page, limit)
+}
+
+export async function getSaleById(id) {
+  const sale = await findSaleById(id)
+  if (!sale) {
+    const err = new Error('Venta no encontrada')
+    err.statusCode = 404
+    throw err
+  }
+  return sale
+}
+
+export async function createSale({ userId, items }) {
+  <span class="cm">// Usamos transacción porque tocamos sale, sale_items y products</span>
+  return prisma.$transaction(async (tx) => {
+    let total = 0
+    const saleItems = []
+
+    <span class="cm">// Regla: verificar existencia y stock de cada producto</span>
+    for (const item of items) {
+      const product = await tx.product.findUnique({ where: { id: item.productId } })
+
+      if (!product) {
+        const err = new Error(`Producto ${item.productId} no existe`)
+        err.statusCode = 404
+        throw err
+      }
+
+      if (product.stock < item.quantity) {
+        const err = new Error(`Stock insuficiente para "${product.name}". Disponible: ${product.stock}`)
+        err.statusCode = 409
+        throw err
+      }
+
+      const unitPrice = Number(product.price)
+      total += unitPrice * item.quantity
+      saleItems.push({ productId: item.productId, quantity: item.quantity, unitPrice })
+    }
+
+    <span class="cm">// Crear la venta</span>
+    const sale = await tx.sale.create({
+      data: { userId, total, items: { create: saleItems } },
+      include: { items: { include: { product: true } } }
+    })
+
+    <span class="cm">// Descontar stock de cada producto</span>
+    for (const item of items) {
+      await tx.product.update({
+        where: { id: item.productId },
+        data: { stock: { decrement: item.quantity } }
+      })
+    }
+
+    return sale
+  })
+}
+
+export async function updateSaleStatus(id, data, requestUser) {
+  const sale = await findSaleById(id)
+  if (!sale) {
+    const err = new Error('Venta no encontrada')
+    err.statusCode = 404
+    throw err
+  }
+
+  <span class="cm">// Regla: solo el dueño o un admin puede modificar</span>
+  if (sale.userId !== requestUser.id && requestUser.role !== 'ADMIN') {
+    const err = new Error('No tienes permiso para modificar esta venta')
+    err.statusCode = 403
+    throw err
+  }
+
+  <span class="cm">// Regla: una venta completada no se puede modificar</span>
+  if (sale.status === 'COMPLETED') {
+    const err = new Error('No se puede modificar una venta completada')
+    err.statusCode = 409
+    throw err
+  }
+
+  return updateSale(id, data)
+}
+
+export async function removeSale(id, requestUser) {
+  const sale = await findSaleById(id)
+  if (!sale) {
+    const err = new Error('Venta no encontrada')
+    err.statusCode = 404
+    throw err
+  }
+
+  <span class="cm">// Regla: solo admin puede eliminar ventas</span>
+  if (requestUser.role !== 'ADMIN') {
+    const err = new Error('Solo administradores pueden eliminar ventas')
+    err.statusCode = 403
+    throw err
+  }
+
+  return deleteById(id)
+}</pre>
+      </div>
+    </div>
+
+    <!-- PASO 8: CONTROLLER -->
+    <div class="section" id="paso-8">
+      <div class="section-header">
+        <div class="step-number">08</div>
+        <div>
+          <div class="section-title">Controller — Capa HTTP</div>
+          <div class="section-desc">Solo maneja request y reply. No contiene lógica de negocio.</div>
+        </div>
+      </div>
+
+      <div class="callout success">
+        <span class="callout-icon">🎮</span>
+        <div>
+          <div class="callout-title">La responsabilidad del controller es mínima</div>
+          <p>Extrae los datos del request → llama al service → devuelve el resultado con el status code correcto. Nada más.</p>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.controller.js</span><span class="code-lang">js</span></div>
+        <pre>import {
+  getAllSales,
+  getSaleById,
+  createSale,
+  updateSaleStatus,
+  removeSale
+} from './sales.service.js'
+import { getSalesQuerySchema, createSaleSchema, updateSaleSchema } from './sales.schema.js'
+import { sanitizeQuery } from '../../shared/utils/sanitize.js'
+
+export async function listSalesHandler(request, reply) {
+  const query = getSalesQuerySchema.parse(sanitizeQuery(request.query))
+
+  <span class="cm">// si no es admin, solo ve sus propias ventas</span>
+  if (request.user.role !== 'ADMIN') {
+    query.userId = request.user.id
+  }
+
+  const result = await getAllSales(query)
+  return reply.send(result)
+}
+
+export async function getSaleHandler(request, reply) {
+  const sale = await getSaleById(request.params.id)
+  return reply.send(sale)
+}
+
+export async function createSaleHandler(request, reply) {
+  const body = createSaleSchema.parse(request.body)
+  const sale = await createSale({ userId: request.user.id, items: body.items })
+  return reply.code(201).send(sale)
+}
+
+export async function updateSaleHandler(request, reply) {
+  const body = updateSaleSchema.parse(request.body)
+  const sale = await updateSaleStatus(request.params.id, body, request.user)
+  return reply.send(sale)
+}
+
+export async function deleteSaleHandler(request, reply) {
+  await removeSale(request.params.id, request.user)
+  return reply.code(204).send()
+}</pre>
+      </div>
+    </div>
+
+    <!-- PASO 9: ROUTES + SCHEMA -->
+    <div class="section" id="paso-9">
+      <div class="section-header">
+        <div class="step-number">09</div>
+        <div>
+          <div class="section-title">Routes + Schemas Zod</div>
+          <div class="section-desc">Registra endpoints, define schemas de validación y asigna middlewares.</div>
+        </div>
+      </div>
+
+      <h3>// schemas de validación</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.schema.js</span><span class="code-lang">js</span></div>
+        <pre>import { z } from 'zod'
+
+export const createSaleSchema = z.object({
+  items: z.array(z.object({
+    productId: z.string().uuid('ID de producto inválido'),
+    quantity: z.number().int().positive('La cantidad debe ser mayor a 0')
+  })).min(1, 'Debes incluir al menos un producto')
+})
+
+export const updateSaleSchema = z.object({
+  status: z.enum(['PENDING', 'COMPLETED', 'CANCELLED'])
+})
+
+export const getSalesQuerySchema = z.object({
+  page:   z.coerce.number().int().positive().default(1),
+  limit:  z.coerce.number().int().positive().max(100).default(10),
+  status: z.enum(['PENDING', 'COMPLETED', 'CANCELLED']).optional(),
+  userId: z.string().uuid().optional()
+})</pre>
+      </div>
+
+      <h3>// rutas</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.routes.js</span><span class="code-lang">js</span></div>
+        <pre>import { requireAuth } from '../../shared/middlewares/auth.middleware.js'
+import { requireRole } from '../../shared/middlewares/roles.middleware.js'
+import {
+  listSalesHandler,
+  getSaleHandler,
+  createSaleHandler,
+  updateSaleHandler,
+  deleteSaleHandler
+} from './sales.controller.js'
+
+export async function salesRoutes(fastify) {
+
+  <span class="cm">// GET /api/sales</span>
+  fastify.get('/', {
+    preHandler: [requireAuth],
+    schema: {
+      tags: ['Sales'],
+      summary: 'Listar ventas con paginación',
+      security: [{ bearerAuth: [] }]
+    }
+  }, listSalesHandler)
+
+  <span class="cm">// GET /api/sales/:id</span>
+  fastify.get('/:id', {
+    preHandler: [requireAuth],
+    schema: { tags: ['Sales'], summary: 'Obtener venta por ID' }
+  }, getSaleHandler)
+
+  <span class="cm">// POST /api/sales</span>
+  fastify.post('/', {
+    preHandler: [requireAuth],
+    schema: { tags: ['Sales'], summary: 'Crear nueva venta' }
+  }, createSaleHandler)
+
+  <span class="cm">// PATCH /api/sales/:id</span>
+  fastify.patch('/:id', {
+    preHandler: [requireAuth],
+    schema: { tags: ['Sales'], summary: 'Actualizar estado de venta' }
+  }, updateSaleHandler)
+
+  <span class="cm">// DELETE /api/sales/:id — solo ADMIN</span>
+  fastify.delete('/:id', {
+    preHandler: [requireAuth, requireRole('ADMIN')],
+    schema: { tags: ['Sales'], summary: 'Eliminar venta (admin)' }
+  }, deleteSaleHandler)
+}</pre>
+      </div>
+    </div>
+
+    <!-- PASO 10: MÓDULO -->
+    <div class="section" id="paso-10">
+      <div class="section-header">
+        <div class="step-number">10</div>
+        <div>
+          <div class="section-title">Módulo — Plugin de Fastify</div>
+          <div class="section-desc">El módulo es el plugin que registra todo el módulo en Fastify.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.module.js</span><span class="code-lang">js</span></div>
+        <pre>import fp from 'fastify-plugin'
+import { salesRoutes } from './sales.routes.js'
+
+<span class="cm">// fp() hace que el plugin comparta el scope del padre</span>
+<span class="cm">// (necesario para acceder a fastify.prisma, fastify.redis, etc.)</span>
+export const salesModule = fp(async (fastify) => {
+  fastify.register(salesRoutes)
+})</pre>
+      </div>
+
+      <div class="callout info">
+        <span class="callout-icon">🔌</span>
+        <div>
+          <div class="callout-title">¿Por qué fp() (fastify-plugin)?</div>
+          <p>Sin <code>fp()</code>, cada plugin tiene su propio scope encapsulado y no puede ver los decoradores del padre (como <code>fastify.prisma</code> o <code>fastify.redis</code>). Con <code>fp()</code> el plugin comparte el scope global.</p>
+        </div>
+      </div>
+
+      <h3>// para agregar un nuevo módulo</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/app.js — agregar módulos</span><span class="code-lang">js</span></div>
+        <pre>app.register(authModule,     { prefix: '/api/auth' })
+app.register(salesModule,    { prefix: '/api/sales' })
+app.register(productsModule, { prefix: '/api/products' })  <span class="cm">// nuevo</span>
+app.register(ordersModule,   { prefix: '/api/orders' })    <span class="cm">// nuevo</span></pre>
+      </div>
+    </div>
+
+    <!-- PASO 11: ARCHIVOS -->
+    <div class="section" id="paso-11">
+      <div class="section-header">
+        <div class="step-number">11</div>
+        <div>
+          <div class="section-title">Subida de Archivos</div>
+          <div class="section-desc">Upload de imágenes con @fastify/multipart. Solo para admins.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 fragmento en products.controller.js</span><span class="code-lang">js</span></div>
+        <pre>import path from 'path'
+import fs from 'fs/promises'
+import { pipeline } from 'stream/promises'
+import { createWriteStream } from 'fs'
+import { prisma } from '../../shared/plugins/prisma.plugin.js'
+import { env } from '../../config/env.js'
+
+export async function uploadProductImageHandler(request, reply) {
+  const data = await request.file()
+
+  <span class="cm">// validar tipo MIME</span>
+  const allowed = ['image/jpeg', 'image/png', 'image/webp']
+  if (!allowed.includes(data.mimetype)) {
+    return reply.code(400).send({ message: 'Solo JPEG, PNG o WebP' })
+  }
+
+  <span class="cm">// nombre seguro — nunca usar data.filename directamente</span>
+  const ext = path.extname(data.filename).toLowerCase()
+  const filename = `product-${request.params.id}-${Date.now()}${ext}`
+  const filepath = path.join(env.UPLOAD_DIR, filename)
+
+  <span class="cm">// crear carpeta si no existe y guardar</span>
+  await fs.mkdir(env.UPLOAD_DIR, { recursive: true })
+  await pipeline(data.file, createWriteStream(filepath))
+
+  <span class="cm">// actualizar en BD</span>
+  const imageUrl = `/uploads/${filename}`
+  await prisma.product.update({
+    where: { id: request.params.id },
+    data: { imageUrl }
+  })
+
+  return reply.send({ imageUrl })
+}</pre>
+      </div>
+
+      <div class="callout danger">
+        <span class="callout-icon">🚨</span>
+        <div>
+          <div class="callout-title">Nunca uses el nombre original del archivo</div>
+          <p>Un atacante puede enviar un archivo con nombre <code>../../etc/passwd</code> o <code>malware.exe</code>. Siempre genera un nombre nuevo con <code>Date.now()</code> o un UUID.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 12: AUTH -->
+    <div class="section" id="paso-12">
+      <div class="section-header">
+        <div class="step-number">12</div>
+        <div>
+          <div class="section-title">Autenticación con JWT</div>
+          <div class="section-desc">Cómo funciona el token, dónde vive, cómo fluye entre frontend y backend.</div>
+        </div>
+      </div>
+
+      <p>JWT (JSON Web Token) es un token firmado digitalmente que el servidor entrega al cliente después del login. El cliente lo guarda y lo envía en cada petición para probar su identidad. El servidor solo necesita verificar la firma — no guarda nada en memoria.</p>
+
+      <h3>// flujo completo de autenticación</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 flujo JWT de punta a punta</span><span class="code-lang">bash</span></div>
+        <pre>1. Usuario envía credenciales al backend
+   POST /api/auth/login
+   { email: "juan@mail.com", password: "12345" }
+
+2. Backend verifica credenciales y crea el token
+   token = jwt.sign({ id, email, role })
+   responde: { user: {...}, token: "eyJhbG..." }
+
+3. Frontend guarda el token
+   localStorage.setItem('token', "eyJhbG...")
+
+4. En cada petición siguiente, el frontend envía el token
+   GET /api/sales
+   Authorization: Bearer eyJhbG...
+
+5. Backend verifica el token con requireAuth
+   jwt.verify(token, JWT_SECRET) → { id, email, role }
+   request.user = { id, email, role }
+
+6. Si el token es válido → continúa al controller
+   Si el token expiró o es inválido → 401 Unauthorized</pre>
+      </div>
+
+      <h3>// 1. instalación</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">💻 terminal</span><span class="code-lang">bash</span></div>
+        <pre>npm install @fastify/jwt bcryptjs</pre>
+      </div>
+
+      <h3>// 2. plugin JWT en el backend</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/shared/plugins/jwt.plugin.js</span><span class="code-lang">js</span></div>
+        <pre>import fp from 'fastify-plugin'
+import fastifyJwt from '@fastify/jwt'
+import { env } from '../../config/env.js'
+
+export const jwtPlugin = fp(async (fastify) => {
+  fastify.register(fastifyJwt, {
+    secret: env.JWT_SECRET,          <span class="cm">// clave secreta para firmar tokens</span>
+    sign: { expiresIn: env.JWT_EXPIRES_IN }  <span class="cm">// cuánto tiempo dura el token</span>
+  })
+})
+
+<span class="cm">// se registra en app.js y queda disponible como:</span>
+<span class="cm">// fastify.jwt.sign()   → crear token</span>
+<span class="cm">// request.jwtVerify() → verificar token</span></pre>
+      </div>
+
+      <h3>// 3. auth service — registro y login</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/auth/auth.service.js</span><span class="code-lang">js</span></div>
+        <pre>import bcrypt from 'bcryptjs'
+import { prisma } from '../../shared/plugins/prisma.plugin.js'
+
+export async function registerUser({ name, email, password }, fastify) {
+  <span class="cm">// verificar que el email no esté registrado</span>
+  const existing = await prisma.user.findUnique({ where: { email } })
+  if (existing) {
+    const err = new Error('El email ya está registrado')
+    err.statusCode = 409
+    throw err
+  }
+
+  <span class="cm">// nunca guardar la contraseña en texto plano</span>
+  <span class="cm">// bcrypt la convierte en un hash irreversible</span>
+  const hashed = await bcrypt.hash(password, 12)
+  const user = await prisma.user.create({
+    data: { name, email, password: hashed },
+    select: { id: true, name: true, email: true, role: true }
+  })
+
+  <span class="cm">// crear el token con los datos del usuario</span>
+  const token = fastify.jwt.sign({ id: user.id, email: user.email, role: user.role })
+  return { user, token }
+}
+
+export async function loginUser({ email, password }, fastify) {
+  const user = await prisma.user.findUnique({ where: { email } })
+
+  <span class="cm">// bcrypt.compare usa tiempo constante — previene timing attacks</span>
+  <span class="cm">// si el usuario no existe, igual ejecuta el compare para no dar pistas</span>
+  const valid = user && await bcrypt.compare(password, user.password)
+  if (!valid) {
+    const err = new Error('Credenciales inválidas')
+    err.statusCode = 401
+    throw err
+  }
+
+  const token = fastify.jwt.sign({
+    id:    user.id,
+    email: user.email,
+    role:  user.role
+  })
+
+  return {
+    user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    token  <span class="cm">// ← el frontend guarda este token</span>
+  }
+}</pre>
+      </div>
+
+      <h3>// 4. auth controller y rutas</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/auth/auth.controller.js</span><span class="code-lang">js</span></div>
+        <pre>import { registerUser, loginUser } from './auth.service.js'
+import { registerSchema, loginSchema } from './auth.schema.js'
+
+export async function registerHandler(request, reply) {
+  const body = registerSchema.parse(request.body)
+  const result = await registerUser(body, request.server)
+  return reply.code(201).send(result)
+}
+
+export async function loginHandler(request, reply) {
+  const body = loginSchema.parse(request.body)
+  const result = await loginUser(body, request.server)
+  return reply.send(result)
+}
+
+export async function getMeHandler(request, reply) {
+  <span class="cm">// request.user ya tiene los datos del token gracias a requireAuth</span>
+  return reply.send({ user: request.user })
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/auth/auth.routes.js</span><span class="code-lang">js</span></div>
+        <pre>import { requireAuth } from '../../shared/middlewares/auth.middleware.js'
+import { registerHandler, loginHandler, getMeHandler } from './auth.controller.js'
+
+export async function authRoutes(fastify) {
+
+  <span class="cm">// POST /api/auth/register — público, no requiere token</span>
+  fastify.post('/register', {
+    schema: { tags: ['Auth'], summary: 'Registrar usuario' }
+  }, registerHandler)
+
+  <span class="cm">// POST /api/auth/login — público, devuelve el token</span>
+  fastify.post('/login', {
+    schema: { tags: ['Auth'], summary: 'Iniciar sesión' }
+  }, loginHandler)
+
+  <span class="cm">// GET /api/auth/me — protegido, devuelve el usuario actual</span>
+  fastify.get('/me', {
+    preHandler: [requireAuth],
+    schema: { tags: ['Auth'], summary: 'Obtener usuario actual' }
+  }, getMeHandler)
+}</pre>
+      </div>
+
+      <h3>// 5. middleware de verificación</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/shared/middlewares/auth.middleware.js</span><span class="code-lang">js</span></div>
+        <pre>export async function requireAuth(request, reply) {
+  try {
+    <span class="cm">// verifica el token del header Authorization: Bearer ...</span>
+    <span class="cm">// si es válido, popula request.user con { id, email, role }</span>
+    await request.jwtVerify()
+  } catch {
+    reply.code(401).send({ statusCode: 401, message: 'Token inválido o expirado' })
+  }
+}</pre>
+      </div>
+
+      <h3>// 6. cómo usarlo desde el frontend</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 frontend — login y uso del token</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// 1. hacer login y guardar el token</span>
+async function login(email, password) {
+  const res = await fetch('http://localhost:3000/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  })
+  const { user, token } = await res.json()
+
+  <span class="cm">// guardar en localStorage</span>
+  localStorage.setItem('token', token)
+  localStorage.setItem('user', JSON.stringify(user))
+}
+
+<span class="cm">// 2. función helper para peticiones autenticadas</span>
+async function apiFetch(url, options = {}) {
+  const token = localStorage.getItem('token')
+
+  return fetch(`http://localhost:3000${url}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,  <span class="cm">// ← aquí viaja el token</span>
+      ...options.headers
+    }
+  })
+}
+
+<span class="cm">// 3. usar en cualquier petición protegida</span>
+const res = await apiFetch('/api/sales')
+const data = await res.json()
+
+<span class="cm">// 4. logout — simplemente borrar el token</span>
+function logout() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  window.location.href = '/login'
+}</pre>
+      </div>
+
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <div>
+          <div class="callout-title">localStorage vs cookies</div>
+          <p><code>localStorage</code> es simple pero vulnerable a ataques XSS. En producción considera usar cookies <code>httpOnly</code> que el navegador maneja automáticamente y JavaScript no puede leer. Para este tutorial usamos localStorage por simplicidad.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PASO 12B: AUTH.JS / BETTER AUTH -->
+    <div class="section" id="paso-12b">
+      <div class="section-header">
+        <div class="step-number">12+</div>
+        <div>
+          <div class="section-title">Auth.js y Better Auth con Fastify</div>
+          <div class="section-desc">Librerías de autenticación para el frontend separado del backend.</div>
+        </div>
+      </div>
+
+      <p>Auth.js y Better Auth son librerías que manejan todo el flujo de autenticación por ti — sesiones, tokens, login con Google/GitHub, etc. A diferencia de Next.js donde todo vive junto, aquí el frontend y backend son aplicaciones separadas.</p>
+
+      <div class="callout info">
+        <span class="callout-icon">💡</span>
+        <div>
+          <div class="callout-title">La diferencia con Next.js</div>
+          <p>En Next.js con SSR, Auth.js vive en el servidor y lee las cookies directamente. En nuestra arquitectura, el frontend React/Vue está separado del backend Fastify, entonces Auth.js vive en el <strong>frontend</strong> y se comunica con Fastify via HTTP.</p>
+        </div>
+      </div>
+
+      <h3>// opción A — Better Auth (recomendado para APIs separadas)</h3>
+      <p>Better Auth tiene soporte nativo para backends separados. Se instala en el frontend y apunta a tu API Fastify.</p>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">💻 terminal — en el proyecto frontend</span><span class="code-lang">bash</span></div>
+        <pre>npm install better-auth</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 frontend/src/lib/auth.js</span><span class="code-lang">js</span></div>
+        <pre>import { createAuthClient } from 'better-auth/client'
+
+export const authClient = createAuthClient({
+  <span class="cm">// apunta a tu backend Fastify</span>
+  baseURL: 'http://localhost:3000/api/auth'
+})
+
+<span class="cm">// uso en cualquier componente:</span>
+const { data, error } = await authClient.signIn.email({
+  email: 'juan@mail.com',
+  password: '12345'
+})
+
+<span class="cm">// el token se maneja automáticamente</span>
+<span class="cm">// Better Auth lo guarda y lo envía en cada petición</span></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 frontend/src/lib/auth.js — con Google OAuth</span><span class="code-lang">js</span></div>
+        <pre>import { createAuthClient } from 'better-auth/client'
+
+export const authClient = createAuthClient({
+  baseURL: 'http://localhost:3000/api/auth',
+  plugins: []
+})
+
+<span class="cm">// login con Google</span>
+await authClient.signIn.social({ provider: 'google' })
+
+<span class="cm">// login con GitHub</span>
+await authClient.signIn.social({ provider: 'github' })
+
+<span class="cm">// obtener sesión actual</span>
+const session = await authClient.getSession()
+console.log(session.user.role)</pre>
+      </div>
+
+      <h3>// opción B — Auth.js (mejor para React/Vue standalone)</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">💻 terminal — en el proyecto frontend</span><span class="code-lang">bash</span></div>
+        <pre>npm install next-auth@beta
+<span class="cm"># o para React sin Next.js:</span>
+npm install @auth/react</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 frontend/src/lib/auth.js</span><span class="code-lang">js</span></div>
+        <pre>import { Auth } from '@auth/core'
+import Credentials from '@auth/core/providers/credentials'
+
+export const authConfig = {
+  providers: [
+    Credentials({
+      async authorize(credentials) {
+        <span class="cm">// llama a tu backend Fastify para verificar credenciales</span>
+        const res = await fetch('http://localhost:3000/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(credentials)
+        })
+
+        if (!res.ok) return null
+
+        const { user, token } = await res.json()
+        <span class="cm">// devolver el usuario con el token de Fastify</span>
+        return { ...user, accessToken: token }
+      }
+    })
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      <span class="cm">// guardar el token de Fastify en el JWT de Auth.js</span>
+      if (user) token.accessToken = user.accessToken
+      return token
+    },
+    async session({ session, token }) {
+      <span class="cm">// exponer el token en la sesión para usarlo en peticiones</span>
+      session.accessToken = token.accessToken
+      return session
+    }
+  }
+}</pre>
+      </div>
+
+      <h3>// cómo usar el token de Fastify con Auth.js</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 frontend — petición autenticada con Auth.js</span><span class="code-lang">js</span></div>
+        <pre>import { useSession } from '@auth/react'
+
+function SalesPage() {
+  const { data: session } = useSession()
+
+  async function fetchSales() {
+    <span class="cm">// usar el token de Fastify que guardamos en la sesión</span>
+    const res = await fetch('http://localhost:3000/api/sales', {
+      headers: {
+        'Authorization': `Bearer ${session.accessToken}`
+      }
+    })
+    return res.json()
+  }
+}</pre>
+      </div>
+
+      <h3>// comparación: ¿cuál usar?</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 referencia rápida</span><span class="code-lang">bash</span></div>
+        <pre>                    JWT manual    Better Auth    Auth.js
+─────────────────────────────────────────────────────────────
+Configuración        Simple        Simple         Media
+OAuth (Google etc.)  Manual        ✅ incluido    ✅ incluido
+Control total        ✅            Medio          Medio
+Frontend separado    ✅            ✅             Requiere config
+Recomendado para     APIs simples  Apps modernas  Ecosistema React</pre>
+      </div>
+
+      <div class="callout success">
+        <span class="callout-icon">✅</span>
+        <div>
+          <div class="callout-title">Recomendación</div>
+          <p>Si solo necesitas email/password, el JWT manual de Fastify es suficiente y más simple. Si necesitas login con Google, GitHub u otros proveedores, usa <strong>Better Auth</strong> — tiene mejor soporte para backends separados que Auth.js.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PASO 13: ROLES -->
+    <div class="section" id="paso-13">
+      <div class="section-header">
+        <div class="step-number">13</div>
+        <div>
+          <div class="section-title">Roles y Permisos (RBAC)</div>
+          <div class="section-desc">El rol define quién eres. Los permisos definen qué puedes hacer. Se verifican en la ruta, antes del controller.</div>
+        </div>
+      </div>
+
+      <p>RBAC significa <strong>Role Based Access Control</strong> — control de acceso basado en roles. En lugar de definir permisos individuales por usuario, defines roles (ADMIN, USER) y cada rol tiene acceso a ciertos endpoints.</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4>👤 Rol USER</h4>
+          <p>Puede ver y crear sus propias ventas. No puede eliminar ventas ni ver las ventas de otros usuarios.</p>
+        </div>
+        <div class="card">
+          <h4>👑 Rol ADMIN</h4>
+          <p>Puede ver todas las ventas, eliminar cualquier venta, gestionar productos y acceder a endpoints administrativos.</p>
+        </div>
+      </div>
+
+      <h3>// 1. el rol vive en la base de datos</h3>
+      <p>El rol se asigna cuando se crea el usuario. Por defecto es USER. Solo se puede cambiar a ADMIN directamente en la base de datos o con un endpoint administrativo.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 prisma/schema.prisma</span><span class="code-lang">prisma</span></div>
+        <pre>model User {
+  id    String @id @default(uuid())
+  email String @unique
+  role  Role   @default(USER)   <span class="cm">// todos empiezan como USER</span>
+}
+
+enum Role {
+  USER
+  ADMIN
+}</pre>
+      </div>
+
+      <h3>// 2. el rol viaja dentro del JWT</h3>
+      <p>Cuando el usuario hace login, el rol se incluye dentro del token JWT. Así no necesitamos consultar la base de datos en cada petición para saber qué rol tiene.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/auth/auth.service.js (fragmento)</span><span class="code-lang">js</span></div>
+        <pre>export async function loginUser({ email, password }, fastify) {
+  const user = await prisma.user.findUnique({ where: { email } })
+  <span class="cm">// ... validar contraseña ...</span>
+
+  <span class="cm">// el rol se guarda DENTRO del token</span>
+  const token = fastify.jwt.sign({
+    id:    user.id,
+    email: user.email,
+    role:  user.role   <span class="cm">// ← aquí viaja el rol</span>
+  })
+
+  return { user, token }
+}
+
+<span class="cm">// el token decodificado contiene:</span>
+<span class="cm">// { id: "abc-123", email: "juan@mail.com", role: "ADMIN", iat: ..., exp: ... }</span></pre>
+      </div>
+
+      <h3>// 3. cómo fluye el rol desde el frontend hasta la ruta</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 flujo completo</span><span class="code-lang">bash</span></div>
+        <pre>1. Usuario hace login → recibe el token JWT
+   { token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
+
+2. Frontend guarda el token (localStorage o cookie)
+
+3. En cada petición el frontend envía el token en el header:
+   Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+4. requireAuth verifica el token → extrae el payload
+   request.user = { id: "abc-123", email: "juan@mail.com", role: "ADMIN" }
+
+5. requireRole('ADMIN') verifica request.user.role
+   ✅ es ADMIN → pasa al controller
+   ❌ es USER  → 403 Forbidden</pre>
+      </div>
+
+      <h3>// 4. el middleware — patrón factory</h3>
+      <p>Es una función que devuelve otra función. Esto permite pasarle el rol requerido como argumento.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/shared/middlewares/roles.middleware.js</span><span class="code-lang">js</span></div>
+        <pre>export function requireRole(...roles) {
+  <span class="cm">// devuelve un middleware que Fastify puede ejecutar en preHandler</span>
+  return async function (request, reply) {
+    if (!roles.includes(request.user.role)) {
+      return reply.code(403).send({
+        statusCode: 403,
+        error: 'Forbidden',
+        message: `Acceso denegado. Se requiere rol: ${roles.join(' o ')}`
+      })
+    }
+    <span class="cm">// si tiene el rol correcto, no hace nada y la petición continúa</span>
+  }
+}</pre>
+      </div>
+
+      <h3>// 5. dónde se llama — en cada ruta del módulo</h3>
+      <p>Se aplica en el <code>preHandler</code> de cada ruta que necesita protección. Siempre después de <code>requireAuth</code> porque primero necesitamos saber quién es el usuario para luego verificar su rol.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.routes.js</span><span class="code-lang">js</span></div>
+        <pre>import { requireAuth } from '../../shared/middlewares/auth.middleware.js'
+import { requireRole } from '../../shared/middlewares/roles.middleware.js'
+
+export async function salesRoutes(fastify) {
+
+  <span class="cm">// cualquier usuario autenticado puede listar ventas</span>
+  fastify.get('/', {
+    preHandler: [requireAuth]
+  }, listSalesHandler)
+
+  <span class="cm">// cualquier usuario autenticado puede crear una venta</span>
+  fastify.post('/', {
+    preHandler: [requireAuth]
+  }, createSaleHandler)
+
+  <span class="cm">// solo ADMIN puede eliminar ventas</span>
+  fastify.delete('/:id', {
+    preHandler: [requireAuth, requireRole('ADMIN')]
+  }, deleteSaleHandler)
+
+  <span class="cm">// solo ADMIN puede ver el reporte general</span>
+  fastify.get('/report', {
+    preHandler: [requireAuth, requireRole('ADMIN')]
+  }, getSalesReportHandler)
+}</pre>
+      </div>
+
+      <h3>// 6. qué recibe el frontend según el rol</h3>
+      <div class="compare">
+        <div class="compare-box good">
+          <div class="compare-header">✅ ADMIN hace DELETE /api/sales/123</div>
+          <pre>// Authorization: Bearer token-de-admin
+// request.user.role = "ADMIN"
+// requireRole('ADMIN') → pasa
+// controller ejecuta → 204 No Content</pre>
+        </div>
+        <div class="compare-box bad">
+          <div class="compare-header">❌ USER hace DELETE /api/sales/123</div>
+          <pre>// Authorization: Bearer token-de-user
+// request.user.role = "USER"
+// requireRole('ADMIN') → bloquea
+// nunca llega al controller → 403 Forbidden</pre>
+        </div>
+      </div>
+
+      <h3>// 7. cómo manejar roles desde el frontend</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 ejemplo en el frontend (cualquier framework)</span><span class="code-lang">js</span></div>
+        <pre"><span class="cm">// 1. al hacer login, guardar el token y el rol</span>
+const { user, token } = await login({ email, password })
+localStorage.setItem('token', token)
+localStorage.setItem('role', user.role)
+
+<span class="cm">// 2. en cada petición, enviar el token en el header</span>
+const response = await fetch('/api/sales', {
+  headers: {
+    'Authorization': `Bearer ${localStorage.getItem('token')}`
+  }
+})
+
+<span class="cm">// 3. mostrar/ocultar elementos según el rol</span>
+const role = localStorage.getItem('role')
+if (role === 'ADMIN') {
+  mostrarBotonEliminar()
+}
+
+<span class="cm">// IMPORTANTE: ocultar en el frontend es solo UX</span>
+<span class="cm">// La verdadera protección siempre está en el backend con requireRole</span></pre>
+      </div>
+
+      <div class="callout danger">
+        <span class="callout-icon">🚨</span>
+        <div>
+          <div class="callout-title">Nunca confíes solo en el frontend para los permisos</div>
+          <p>Ocultar un botón en el frontend es solo experiencia de usuario. Cualquier persona puede hacer una petición directamente desde Postman o curl sin importar lo que muestre el frontend. La verificación de roles <strong>siempre debe estar en el backend</strong> con <code>requireRole</code>.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PASO 14: CORS -->
+    <div class="section" id="paso-14">
+      <div class="section-header">
+        <div class="step-number">14</div>
+        <div>
+          <div class="section-title">CORS</div>
+          <div class="section-desc">Cross-Origin Resource Sharing — controla qué dominios pueden consumir tu API.</div>
+        </div>
+      </div>
+
+      <p>CORS es un mecanismo del navegador que bloquea peticiones que vienen de un dominio diferente al de la API. Si tu frontend está en <code>tuapp.com</code> y tu API está en <code>api.tuapp.com</code>, el navegador bloquea esa petición por defecto. CORS le dice al navegador qué orígenes están permitidos.</p>
+
+      <div class="callout info">
+        <span class="callout-icon">💡</span>
+        <div>
+          <div class="callout-title">CORS solo lo valida el navegador</div>
+          <p>Herramientas como Postman, curl o aplicaciones móviles no envían el header <code>Origin</code>, por eso no son bloqueadas por CORS. Solo los navegadores web aplican esta restricción.</p>
+        </div>
+      </div>
+
+      <h3>// 1. instalación (ya incluida en el proyecto)</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">💻 terminal</span><span class="code-lang">bash</span></div>
+        <pre>npm install @fastify/cors</pre>
+      </div>
+
+      <h3>// 2. el plugin — configuración central</h3>
+      <p>Se configura en un solo lugar y aplica a todos los módulos automáticamente. Los orígenes permitidos cambian según el entorno.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/shared/plugins/cors.plugin.js</span><span class="code-lang">js</span></div>
+        <pre>import fp from 'fastify-plugin'
+import fastifyCors from '@fastify/cors'
+import { env } from '../../config/env.js'
+
+<span class="cm">// orígenes permitidos según el entorno</span>
+<span class="cm">// en desarrollo: localhost del frontend</span>
+<span class="cm">// en producción: solo tus dominios reales</span>
+const origins = {
+  development: ['http://localhost:3000', 'http://localhost:5173'],
+  production:  ['https://tuapp.com', 'https://app.tuapp.com']
+}
+
+export const corsPlugin = fp(async (fastify) => {
+  fastify.register(fastifyCors, {
+
+    <span class="cm">// origin: función que decide si el origen está permitido</span>
+    origin: (origin, callback) => {
+      const allowed = origins[env.NODE_ENV] || []
+
+      <span class="cm">// sin origin → Postman, curl, apps móviles → siempre permitir</span>
+      <span class="cm">// con origin → verificar si está en la lista</span>
+      if (!origin || allowed.includes(origin)) {
+        callback(null, true)   <span class="cm">// ✅ permitido</span>
+      } else {
+        callback(new Error('Origen no permitido'), false)  <span class="cm">// ❌ bloqueado</span>
+      }
+    },
+
+    <span class="cm">// methods: qué métodos HTTP están permitidos desde el navegador</span>
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+
+    <span class="cm">// credentials: permite enviar cookies y headers de autorización</span>
+    <span class="cm">// necesario si usas JWT en el header Authorization</span>
+    credentials: true
+  })
+})</pre>
+      </div>
+
+      <h3>// 3. dónde se llama — en app.js</h3>
+      <p>El plugin se registra una sola vez en <code>app.js</code> y Fastify lo aplica automáticamente a todas las rutas de todos los módulos.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/app.js</span><span class="code-lang">js</span></div>
+        <pre>import { corsPlugin } from './shared/plugins/cors.plugin.js'
+
+export function buildApp() {
+  const app = Fastify({ ... })
+
+  <span class="cm">// registrar CORS antes que los módulos</span>
+  <span class="cm">// así aplica a todas las rutas de sales, auth, products, etc.</span>
+  app.register(corsPlugin)
+
+  app.register(authModule,  { prefix: '/api/auth' })
+  app.register(salesModule, { prefix: '/api/sales' })
+
+  return app
+}</pre>
+      </div>
+
+      <h3>// 4. qué pasa cuando un origen no está permitido</h3>
+      <div class="compare">
+        <div class="compare-box good">
+          <div class="compare-header">✅ Origen permitido</div>
+          <pre>// petición desde http://localhost:5173
+// está en la lista de development
+
+GET /api/sales
+Origin: http://localhost:5173
+
+// respuesta normal con header:
+Access-Control-Allow-Origin: http://localhost:5173</pre>
+        </div>
+        <div class="compare-box bad">
+          <div class="compare-header">❌ Origen bloqueado</div>
+          <pre>// petición desde http://sitio-malicioso.com
+// NO está en la lista
+
+GET /api/sales
+Origin: http://sitio-malicioso.com
+
+// el navegador recibe error CORS
+// la petición nunca llega al controller</pre>
+        </div>
+      </div>
+
+      <h3>// 5. cómo agregar nuevos orígenes permitidos</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/shared/plugins/cors.plugin.js — agregar orígenes</span><span class="code-lang">js</span></div>
+        <pre>const origins = {
+  development: [
+    'http://localhost:3000',   <span class="cm">// frontend React/Vue</span>
+    'http://localhost:5173',   <span class="cm">// Vite dev server</span>
+    'http://localhost:4200',   <span class="cm">// Angular dev server</span>
+  ],
+  production: [
+    'https://tuapp.com',
+    'https://app.tuapp.com',
+    'https://admin.tuapp.com'  <span class="cm">// panel administrativo</span>
+  ]
+}</pre>
+      </div>
+
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <div>
+          <div class="callout-title">Nunca uses origin: '*' en producción</div>
+          <p>El wildcard <code>*</code> permite que cualquier dominio consuma tu API. En desarrollo puede ser útil, pero en producción siempre especifica los dominios exactos que deben tener acceso.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PASO 15: RATE LIMITING -->
+    <div class="section" id="paso-15">
+      <div class="section-header">
+        <div class="step-number">15</div>
+        <div>
+          <div class="section-title">Rate Limiting</div>
+          <div class="section-desc">Limita cuántas peticiones puede hacer una IP en un período de tiempo. Previene ataques DDoS y abuso de endpoints.</div>
+        </div>
+      </div>
+
+      <p>Sin rate limiting, cualquier persona podría hacer miles de peticiones por segundo contra tu API — ya sea para tumbar el servidor, intentar adivinar contraseñas, o abusar de endpoints costosos. El rate limiting bloquea la IP automáticamente cuando supera el límite configurado.</p>
+
+      <p>No todos los endpoints necesitan el mismo límite. Un endpoint de consulta puede recibir más tráfico que uno de login o de subida de archivos.</p>
+
+      <h3>// 1. instalación (ya incluida en el proyecto)</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">💻 terminal</span><span class="code-lang">bash</span></div>
+        <pre>npm install @fastify/rate-limit</pre>
+      </div>
+
+      <h3>// 2. configuración global en app.js</h3>
+      <p>El rate limiting global aplica a <strong>todos</strong> los endpoints de la app. Es la primera línea de defensa.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/app.js</span><span class="code-lang">js</span></div>
+        <pre>import rateLimit from '@fastify/rate-limit'
+
+app.register(rateLimit, {
+  max: 100,                   <span class="cm">// máximo 100 peticiones</span>
+  timeWindow: '1 minute',     <span class="cm">// por IP, por minuto</span>
+  errorResponseBuilder: () => ({
+    statusCode: 429,
+    error: 'Too Many Requests',
+    message: 'Demasiadas peticiones. Intenta en 1 minuto.'
+  })
+})
+
+<span class="cm">// a partir de aquí, si una IP supera 100 req/min</span>
+<span class="cm">// Fastify devuelve automáticamente un 429 sin llegar al controller</span></pre>
+      </div>
+
+      <div class="callout info">
+        <span class="callout-icon">💡</span>
+        <div>
+          <div class="callout-title">¿Dónde vive el rate limiting?</div>
+          <p>El rate limiting es un plugin de infraestructura — vive en <code>app.js</code> para la configuración global, y en <code>routes.js</code> de cada módulo para límites específicos por ruta. <strong>No va en el service ni en el repository</strong> porque no es lógica de negocio, es infraestructura.</p>
+        </div>
+      </div>
+
+      <h3>// 3. límites diferenciados por ruta — en routes.js</h3>
+      <p>Algunos endpoints necesitan más protección que otros. Esto se configura directamente en la definición de la ruta.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/auth/auth.routes.js</span><span class="code-lang">js</span></div>
+        <pre>export async function authRoutes(fastify) {
+
+  <span class="cm">// login — muy estricto: solo 5 intentos cada 15 minutos por IP</span>
+  <span class="cm">// evita ataques de fuerza bruta para adivinar contraseñas</span>
+  fastify.post('/login', {
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: '15 minutes',
+        errorResponseBuilder: () => ({
+          statusCode: 429,
+          error: 'Too Many Requests',
+          message: 'Demasiados intentos de login. Espera 15 minutos.'
+        })
+      }
+    }
+  }, loginHandler)
+
+  <span class="cm">// registro — moderado: 10 cuentas por hora por IP</span>
+  fastify.post('/register', {
+    config: {
+      rateLimit: { max: 10, timeWindow: '1 hour' }
+    }
+  }, registerHandler)
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.routes.js (fragmento)</span><span class="code-lang">js</span></div>
+        <pre">export async function salesRoutes(fastify) {
+
+  <span class="cm">// listar ventas — usa el límite global (100/min)</span>
+  <span class="cm">// es una consulta simple, no necesita límite extra</span>
+  fastify.get('/', { preHandler: [requireAuth] }, listSalesHandler)
+
+  <span class="cm">// crear venta — moderado: 30 ventas por minuto por IP</span>
+  fastify.post('/', {
+    preHandler: [requireAuth],
+    config: {
+      rateLimit: { max: 30, timeWindow: '1 minute' }
+    }
+  }, createSaleHandler)
+
+  <span class="cm">// subida de archivos — muy estricto: consume muchos recursos</span>
+  fastify.post('/upload', {
+    preHandler: [requireAuth, requireRole('ADMIN')],
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: '1 hour',
+        errorResponseBuilder: () => ({
+          statusCode: 429,
+          message: 'Límite de subida alcanzado. Espera 1 hora.'
+        })
+      }
+    }
+  }, uploadHandler)
+}</pre>
+      </div>
+
+      <h3>// 4. cómo se ve cuando una IP es bloqueada</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 respuesta HTTP 429</span><span class="code-lang">json</span></div>
+        <pre>{
+  "statusCode": 429,
+  "error": "Too Many Requests",
+  "message": "Demasiados intentos de login. Espera 15 minutos."
+}</pre>
+      </div>
+
+      <h3>// 5. tabla de referencia — límites recomendados</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 referencia rápida</span><span class="code-lang">bash</span></div>
+        <pre>Endpoint              Límite sugerido       Razón
+─────────────────────────────────────────────────────────
+GET  /products        100 req/min (global)  consulta simple
+GET  /sales           100 req/min (global)  consulta simple
+POST /sales           30  req/min           operación de escritura
+POST /auth/login      5   cada 15 min       prevenir fuerza bruta
+POST /auth/register   10  cada 1 hora       prevenir spam de cuentas
+POST /upload          10  cada 1 hora       consume muchos recursos</pre>
+      </div>
+
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <div>
+          <div class="callout-title">El rate limiting por ruta sobreescribe el global</div>
+          <p>Si el límite global es 100/min pero el login tiene 5 cada 15 minutos, el login usará su propio límite. El límite más específico siempre gana.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PASO 16: SQL INJECTION -->
+    <div class="section" id="paso-16">
+      <div class="section-header">
+        <div class="step-number">16</div>
+        <div>
+          <div class="section-title">Prevención SQL Injection</div>
+          <div class="section-desc">Prisma protege por defecto. Sanitización extra para query params.</div>
+        </div>
+      </div>
+
+      <div class="callout success">
+        <span class="callout-icon">🛡️</span>
+        <div>
+          <div class="callout-title">Prisma usa queries parametrizadas internamente</div>
+          <p>Si usas la API normal de Prisma, estás protegido automáticamente. El peligro solo existe si usas <code>$queryRawUnsafe</code>. Nunca lo uses con datos del usuario.</p>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/shared/utils/sanitize.js</span><span class="code-lang">js</span></div>
+        <pre>export function sanitizeQuery(query) {
+  const result = {}
+  for (const [key, value] of Object.entries(query)) {
+    if (typeof value === 'string') {
+      result[key] = value
+        .replace(/[<>'"`;\\]/g, '')  <span class="cm">// eliminar caracteres peligrosos</span>
+        .trim()
+        .slice(0, 200)               <span class="cm">// limitar longitud máxima</span>
+    } else {
+      result[key] = value
+    }
+  }
+  return result
+}
+
+<span class="cm">// Si NECESITAS usar queryRaw, usa siempre el tagged template (seguro)</span>
+import { Prisma } from '@prisma/client'
+
+export async function searchSalesRaw(status) {
+  <span class="cm">// ✅ seguro — parametrizado</span>
+  return prisma.$queryRaw`SELECT * FROM sales WHERE status = ${status}`
+
+  <span class="cm">// ❌ NUNCA así — vulnerable a SQL injection</span>
+  <span class="cm">// return prisma.$queryRawUnsafe(`SELECT * WHERE status = '${status}'`)</span>
+}</pre>
+      </div>
+    </div>
+
+    <!-- PASO 17: REDIS -->
+    <div class="section" id="paso-17">
+      <div class="section-header">
+        <div class="step-number">17</div>
+        <div>
+          <div class="section-title">Redis Cache</div>
+          <div class="section-desc">Base de datos en memoria para cachear resultados y evitar consultas repetidas a PostgreSQL.</div>
+        </div>
+      </div>
+
+      <p>Redis es una base de datos NoSQL que vive en memoria RAM. Es extremadamente rápido porque no necesita ir al disco. Lo usamos para guardar temporalmente resultados de consultas costosas para que la próxima vez que alguien pida el mismo dato, lo entregamos desde Redis sin tocar PostgreSQL.</p>
+
+      <div class="callout info">
+        <span class="callout-icon">💡</span>
+        <div>
+          <div class="callout-title">¿En qué capa vive Redis?</div>
+          <p>En el <strong>service</strong>. Decidir si un dato viene del caché o de la base de datos es una decisión de negocio — no es responsabilidad del controller ni del repository. El flujo es: primero busca en Redis, si no está va al repository, guarda en Redis y devuelve.</p>
+        </div>
+      </div>
+
+      <h3>// 1. instalación de Redis en tu máquina</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">💻 terminal — Mac</span><span class="code-lang">bash</span></div>
+        <pre>brew install redis
+brew services start redis</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">💻 terminal — Ubuntu/Debian</span><span class="code-lang">bash</span></div>
+        <pre>sudo apt install redis-server
+sudo systemctl start redis</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">💻 terminal — verificar que funciona</span><span class="code-lang">bash</span></div>
+        <pre>redis-cli ping
+<span class="cm"># debe responder: PONG</span></pre>
+      </div>
+
+      <h3>// 2. variable de entorno (ya configurada en .env)</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 .env</span><span class="code-lang">env</span></div>
+        <pre>REDIS_URL=redis://localhost:6379</pre>
+      </div>
+
+      <h3>// 3. plugin — conexión compartida en toda la app</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/shared/plugins/redis.plugin.js</span><span class="code-lang">js</span></div>
+        <pre>import fp from 'fastify-plugin'
+import Redis from 'ioredis'
+import { env } from '../../config/env.js'
+
+<span class="cm">// instancia única — la misma conexión para toda la app</span>
+export const redis = new Redis(env.REDIS_URL, {
+  lazyConnect: true,
+  retryStrategy: (times) => Math.min(times * 100, 3000)  <span class="cm">// reintenta si falla</span>
+})
+
+export const redisPlugin = fp(async (fastify) => {
+  await redis.connect()
+  fastify.log.info('✅ Redis conectado')
+
+  <span class="cm">// cerrar la conexión cuando la app se apague</span>
+  fastify.addHook('onClose', async () => {
+    await redis.quit()
+    fastify.log.info('Redis desconectado')
+  })
+})</pre>
+      </div>
+
+      <h3>// 4. cuándo usar caché y cuándo no</h3>
+      <div class="compare">
+        <div class="compare-box good">
+          <div class="compare-header">✅ Cachear esto</div>
+          <pre>// datos que se leen mucho y cambian poco
+getSaleById(id)       // detalle de una venta
+getProductById(id)    // detalle de un producto
+getUserById(id)       // perfil de usuario
+listCategories()      // catálogos estáticos</pre>
+        </div>
+        <div class="compare-box bad">
+          <div class="compare-header">❌ No cachear esto</div>
+          <pre>// datos que cambian constantemente
+listSales()    // cambia con cada venta nueva
+getStock()     // cambia con cada compra
+login()        // siempre debe ir a la BD
+createSale()   // operaciones de escritura</pre>
+        </div>
+      </div>
+
+      <h3>// 5. implementación en el service — patrón cache-aside</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.service.js</span><span class="code-lang">js</span></div>
+        <pre>import { redis } from '../../shared/plugins/redis.plugin.js'
+import { findSaleById, updateSale } from './sales.repository.js'
+
+export async function getSaleById(id) {
+  const key = `sale:${id}`  <span class="cm">// clave única por venta</span>
+
+  <span class="cm">// paso 1: buscar en Redis primero</span>
+  const cached = await redis.get(key)
+  if (cached) {
+    return JSON.parse(cached)  <span class="cm">// ← respuesta rápida desde memoria</span>
+  }
+
+  <span class="cm">// paso 2: si no está en caché, ir a PostgreSQL</span>
+  const sale = await findSaleById(id)
+  if (!sale) {
+    const err = new Error('Venta no encontrada')
+    err.statusCode = 404
+    throw err
+  }
+
+  <span class="cm">// paso 3: guardar en Redis por 5 minutos (300 segundos)</span>
+  <span class="cm">// 'EX' significa que expira automáticamente</span>
+  await redis.set(key, JSON.stringify(sale), 'EX', 300)
+
+  return sale
+}
+
+export async function updateSaleStatus(id, data, requestUser) {
+  <span class="cm">// ... validaciones de negocio ...</span>
+
+  const sale = await updateSale(id, data)
+
+  <span class="cm">// paso importante: invalidar el caché al actualizar</span>
+  <span class="cm">// si no lo haces, el caché devolvería datos desactualizados</span>
+  await redis.del(`sale:${id}`)
+
+  return sale
+}
+
+export async function removeSale(id, requestUser) {
+  <span class="cm">// ... validaciones ...</span>
+  await deleteById(id)
+
+  <span class="cm">// también invalidar al eliminar</span>
+  await redis.del(`sale:${id}`)
+}</pre>
+      </div>
+
+      <h3>// 6. flujo visual completo</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 GET /api/sales/:id — con caché</span><span class="code-lang">bash</span></div>
+        <pre>Primera petición:
+  controller → service → Redis ❌ no está
+                       → repository → PostgreSQL ✅
+                       → guarda en Redis (5 min)
+                       → devuelve dato
+  Tiempo: ~50ms
+
+Segunda petición (dentro de 5 min):
+  controller → service → Redis ✅ encontrado
+                       → devuelve dato
+  Tiempo: ~2ms   ← 25x más rápido</pre>
+      </div>
+
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <div>
+          <div class="callout-title">Siempre invalida el caché al modificar datos</div>
+          <p>Si actualizas o eliminas un registro en PostgreSQL pero no borras su clave en Redis, la próxima consulta devolverá datos desactualizados. Usa <code>redis.del(key)</code> en cualquier operación de escritura.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PASO 18: ERRORES -->
+    <div class="section" id="paso-18">
+      <div class="section-header">
+        <div class="step-number">18</div>
+        <div>
+          <div class="section-title">Manejo Global de Errores</div>
+          <div class="section-desc">Un único lugar que captura todos los errores de todos los módulos.</div>
+        </div>
+      </div>
+
+      <p>Sin un manejador global, tendrías que poner un <code>try/catch</code> en cada controller de cada módulo. Eso significa código repetido en ventas, órdenes, productos, usuarios... y si quieres cambiar el formato de los errores, tienes que tocarlo en todos lados.</p>
+
+      <p>Con <code>app.setErrorHandler()</code> le dices a Fastify: <strong>cualquier error que no se capture en ningún lado, mándaselo a esta función</strong>. Y Fastify lo hace automáticamente.</p>
+
+      <h3>// cómo se propaga un error por las capas</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 flujo de propagación</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// 1. el service lanza un error</span>
+export async function getSaleById(id) {
+  const sale = await findSaleById(id)
+  if (!sale) {
+    const err = new Error('Venta no encontrada')
+    err.statusCode = 404
+    throw err   <span class="cm">// ← se lanza aquí</span>
+  }
+  return sale
+}
+
+<span class="cm">// 2. el controller NO tiene try/catch — no lo captura</span>
+export async function getSaleHandler(request, reply) {
+  const sale = await getSaleById(request.params.id)  <span class="cm">// el error sube hasta aquí</span>
+  return reply.send(sale)                             <span class="cm">// y sigue subiendo...</span>
+}
+
+<span class="cm">// 3. Fastify lo intercepta automáticamente</span>
+<span class="cm">// 4. lo manda al errorHandler registrado en app.js</span>
+<span class="cm">// 5. errorHandler decide qué respuesta HTTP devolver</span></pre>
+      </div>
+
+      <div class="callout success">
+        <span class="callout-icon">✅</span>
+        <div>
+          <div class="callout-title">El resultado: controllers limpios</div>
+          <p>Gracias al manejador global, los controllers no necesitan <code>try/catch</code>. Solo llaman al service y devuelven la respuesta. Si algo falla, Fastify lo redirige al errorHandler automáticamente.</p>
+        </div>
+      </div>
+
+      <h3>// registro en app.js — una sola línea</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/app.js</span><span class="code-lang">js</span></div>
+        <pre>app.setErrorHandler(errorHandler)
+<span class="cm">// a partir de aquí, cualquier error no capturado de cualquier módulo</span>
+<span class="cm">// (sales, auth, products, orders...) llega a esta función</span></pre>
+      </div>
+
+      <h3>// el manejador — qué tipos de errores maneja</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/shared/errors/error-handler.js</span><span class="code-lang">js</span></div>
+        <pre>import { ZodError } from 'zod'
+
+export async function errorHandler(error, request, reply) {
+  request.log.error({ err: error, url: request.url }, 'Error capturado')
+
+  <span class="cm">// tipo 1: errores de validación Zod (datos inválidos del cliente)</span>
+  if (error instanceof ZodError) {
+    return reply.code(400).send({
+      statusCode: 400,
+      error: 'Validation Error',
+      message: 'Datos inválidos',
+      details: error.errors.map(e => ({
+        field: e.path.join('.'),
+        message: e.message
+      }))
+    })
+  }
+
+  <span class="cm">// tipo 2: errores de negocio — lanzados desde el service con statusCode</span>
+  <span class="cm">// ejemplo: { statusCode: 404, message: 'Venta no encontrada' }</span>
+  <span class="cm">// ejemplo: { statusCode: 409, message: 'Stock insuficiente' }</span>
+  <span class="cm">// ejemplo: { statusCode: 403, message: 'Sin permisos' }</span>
+  if (error.statusCode) {
+    return reply.code(error.statusCode).send({
+      statusCode: error.statusCode,
+      error: httpErrorName(error.statusCode),
+      message: error.message
+    })
+  }
+
+  <span class="cm">// tipo 3: errores de Prisma — registro duplicado (email único, etc.)</span>
+  if (error.code === 'P2002') {
+    return reply.code(409).send({
+      statusCode: 409,
+      error: 'Conflict',
+      message: 'Ya existe un registro con esos datos'
+    })
+  }
+
+  <span class="cm">// tipo 4: errores de Prisma — registro no encontrado en update/delete</span>
+  if (error.code === 'P2025') {
+    return reply.code(404).send({
+      statusCode: 404,
+      error: 'Not Found',
+      message: 'Registro no encontrado'
+    })
+  }
+
+  <span class="cm">// tipo 5: error inesperado — nunca exponer detalles internos en producción</span>
+  return reply.code(500).send({
+    statusCode: 500,
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'production'
+      ? 'Error interno del servidor'
+      : error.message
+  })
+}
+
+function httpErrorName(code) {
+  const map = {
+    400: 'Bad Request',
+    401: 'Unauthorized',
+    403: 'Forbidden',
+    404: 'Not Found',
+    409: 'Conflict'
+  }
+  return map[code] || 'Error'
+}</pre>
+      </div>
+
+      <h3>// cómo lanzar errores desde el service</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 patrón para lanzar errores de negocio</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// en cualquier service de cualquier módulo — siempre el mismo patrón</span>
+const err = new Error('mensaje descriptivo para el cliente')
+err.statusCode = 404   <span class="cm">// 400, 401, 403, 404, 409...</span>
+throw err
+
+<span class="cm">// el errorHandler lo recibe y devuelve automáticamente:</span>
+<span class="cm">// { statusCode: 404, error: "Not Found", message: "mensaje descriptivo" }</span></pre>
+      </div>
+
+    </div>
+
+    <!-- PASO 19: LOGS -->
+    <div class="section" id="paso-19">
+      <div class="section-header">
+        <div class="step-number">19</div>
+        <div>
+          <div class="section-title">Logs Estructurados con Pino</div>
+          <div class="section-desc">Fastify incluye Pino por defecto. Los logs más útiles van en el controller porque ahí está el contexto del usuario y la acción.</div>
+        </div>
+      </div>
+
+      <p>Pino ya está configurado en <code>app.js</code> cuando creamos Fastify con la opción <code>logger</code>. No necesitas instalar nada extra ni configurar nada más — Fastify lo activa automáticamente.</p>
+
+      <div class="callout info">
+        <span class="callout-icon">💡</span>
+        <div>
+          <div class="callout-title">¿Dónde van los logs en cada capa?</div>
+          <p><strong>Controller</strong> → quién hizo qué y con qué datos. Es la capa más útil para loggear porque conoce al usuario y la acción HTTP.<br>
+          <strong>Service</strong> → qué regla de negocio se ejecutó o por qué falló.<br>
+          <strong>Repository</strong> → solo en casos de debug muy específico. Normalmente no se loggea aquí.</p>
+        </div>
+      </div>
+
+      <h3>// 1. configuración en app.js (ya incluida)</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/app.js</span><span class="code-lang">js</span></div>
+        <pre>const app = Fastify({
+  logger: {
+    level: env.NODE_ENV === 'production' ? 'info' : 'debug',
+    transport: env.NODE_ENV !== 'production'
+      ? { target: 'pino-pretty', options: { colorize: true } }  <span class="cm">// dev: colores legibles</span>
+      : undefined  <span class="cm">// prod: JSON puro para herramientas externas</span>
+  }
+})</pre>
+      </div>
+
+      <h3>// 2. niveles de log — cuándo usar cada uno</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 niveles disponibles</span><span class="code-lang">js</span></div>
+        <pre>request.log.debug('detalle interno — solo en desarrollo')
+request.log.info('operación normal — registro de actividad')
+request.log.warn('algo sospechoso pero no crítico')
+request.log.error({ err: error }, 'algo falló')</pre>
+      </div>
+
+      <h3>// 3. logs en el controller — el lugar más importante</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.controller.js</span><span class="code-lang">js</span></div>
+        <pre>export async function createSaleHandler(request, reply) {
+  <span class="cm">// log de entrada — quién hizo qué</span>
+  request.log.info(
+    { userId: request.user.id, items: request.body.items.length },
+    'Creando venta'
+  )
+
+  const body = createSaleSchema.parse(request.body)
+  const sale = await createSale({ userId: request.user.id, items: body.items })
+
+  <span class="cm">// log de éxito — qué resultado se obtuvo</span>
+  request.log.info(
+    { userId: request.user.id, saleId: sale.id, total: sale.total },
+    'Venta creada exitosamente'
+  )
+
+  return reply.code(201).send(sale)
+}
+
+export async function deleteSaleHandler(request, reply) {
+  request.log.warn(
+    { adminId: request.user.id, saleId: request.params.id },
+    'Eliminando venta — acción administrativa'
+  )
+
+  await removeSale(request.params.id, request.user)
+
+  request.log.info(
+    { adminId: request.user.id, saleId: request.params.id },
+    'Venta eliminada'
+  )
+
+  return reply.code(204).send()
+}
+
+export async function listSalesHandler(request, reply) {
+  const query = getSalesQuerySchema.parse(sanitizeQuery(request.query))
+  if (request.user.role !== 'ADMIN') query.userId = request.user.id
+
+  const result = await getAllSales(query)
+
+  request.log.info(
+    { userId: request.user.id, total: result.pagination.total, page: query.page },
+    'Ventas listadas'
+  )
+
+  return reply.send(result)
+}</pre>
+      </div>
+
+      <h3>// 4. logs en el service — reglas de negocio</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.service.js (fragmento)</span><span class="code-lang">js</span></div>
+        <pre"><span class="cm">// el service no tiene acceso a request.log</span>
+<span class="cm">// usa console o recibe el logger como parámetro</span>
+import { buildApp } from '../../app.js'
+
+export async function createSale({ userId, items }, log) {
+  return prisma.$transaction(async (tx) => {
+    for (const item of items) {
+      const product = await tx.product.findUnique({ where: { id: item.productId } })
+
+      if (product.stock < item.quantity) {
+        <span class="cm">// log de advertencia de negocio</span>
+        log.warn(
+          { productId: item.productId, stock: product.stock, requested: item.quantity },
+          'Intento de compra con stock insuficiente'
+        )
+        const err = new Error(`Stock insuficiente para "${product.name}"`)
+        err.statusCode = 409
+        throw err
+      }
+    }
+    <span class="cm">// ... resto de la transacción</span>
+  })
+}
+
+<span class="cm">// en el controller se pasa el logger al service:</span>
+const sale = await createSale({ userId: request.user.id, items: body.items }, request.log)</pre>
+      </div>
+
+      <h3>// 5. cómo se ve el output</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 desarrollo — pino-pretty (colores)</span><span class="code-lang">bash</span></div>
+        <pre>[12:34:56.123] INFO (req-1): Creando venta
+    userId: "abc-123"
+    items: 3
+
+[12:34:56.287] INFO (req-1): Venta creada exitosamente
+    userId: "abc-123"
+    saleId: "xyz-789"
+    total: 150.00</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 producción — JSON puro (para Datadog, CloudWatch, etc.)</span><span class="code-lang">json</span></div>
+        <pre>{"level":30,"time":1704067200123,"reqId":"req-1","msg":"Creando venta","userId":"abc-123","items":3}
+{"level":30,"time":1704067200287,"reqId":"req-1","msg":"Venta creada exitosamente","userId":"abc-123","saleId":"xyz-789","total":150}</pre>
+      </div>
+
+      <div class="callout success">
+        <span class="callout-icon">✅</span>
+        <div>
+          <div class="callout-title">reqId — trazabilidad automática</div>
+          <p>Fastify genera automáticamente un <code>reqId</code> único por cada petición. Esto te permite buscar en los logs todo lo que ocurrió durante una petición específica, incluso si hay miles de logs mezclados.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 20: PAGINACIÓN -->
+    <div class="section" id="paso-20">
+      <div class="section-header">
+        <div class="step-number">20</div>
+        <div>
+          <div class="section-title">Paginación</div>
+          <div class="section-desc">La paginación vive en el repository porque es una operación directa contra la base de datos.</div>
+        </div>
+      </div>
+
+      <p>Paginar significa limitar los resultados a una cantidad determinada para evitar traer todos los datos de una sola vez. Imagina que tienes 50 ventas y quieres mostrar 10 por página:</p>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 La fórmula clave</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// take  → cuántos registros traer</span>
+<span class="cm">// skip  → cuántos saltarse antes de empezar</span>
+
+<span class="cm">// Página 1: skip = (1-1) * 10 = 0  → trae del 1 al 10</span>
+<span class="cm">// Página 2: skip = (2-1) * 10 = 10 → trae del 11 al 20</span>
+<span class="cm">// Página 3: skip = (3-1) * 10 = 20 → trae del 21 al 30</span>
+
+const skip = (page - 1) * limit</pre>
+      </div>
+
+      <div class="callout info">
+        <span class="callout-icon">💡</span>
+        <div>
+          <div class="callout-title">¿Por qué Promise.all?</div>
+          <p>Para mostrar el total de páginas necesitamos dos consultas: los datos paginados y el total de registros. Con <code>Promise.all</code> ambas corren en paralelo, reduciendo el tiempo de respuesta casi a la mitad.</p>
+        </div>
+      </div>
+
+      <h3>// 1. repository — donde vive la paginación</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.repository.js</span><span class="code-lang">js</span></div>
+        <pre>export async function findAllSales({ page = 1, limit = 10, status, userId } = {}) {
+  const skip = (page - 1) * limit  <span class="cm">// cuántos registros saltarse</span>
+  const where = {}
+  if (status) where.status = status
+  if (userId) where.userId = userId
+
+  <span class="cm">// las dos consultas corren en paralelo</span>
+  const [data, total] = await Promise.all([
+    prisma.sale.findMany({
+      where,
+      take: limit,   <span class="cm">// cuántos traer</span>
+      skip,          <span class="cm">// cuántos saltarse</span>
+      include: {
+        user:  { select: { id: true, name: true, email: true } },
+        items: { include: { product: { select: { id: true, name: true } } } }
+      },
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.sale.count({ where })  <span class="cm">// total de registros que coinciden</span>
+  ])
+
+  return { data, total }
+}</pre>
+      </div>
+
+      <h3>// 2. service — consume el repository y construye la respuesta</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.service.js (fragmento)</span><span class="code-lang">js</span></div>
+        <pre>import { findAllSales } from './sales.repository.js'
+import { buildPagination } from '../../shared/utils/pagination.js'
+
+export async function getAllSales({ page, limit, status, userId }) {
+  const { data, total } = await findAllSales({ page, limit, status, userId })
+  return buildPagination(data, total, page, limit)
+}</pre>
+      </div>
+
+      <h3>// 3. utils — helper reutilizable en todos los módulos</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/shared/utils/pagination.js</span><span class="code-lang">js</span></div>
+        <pre>export function buildPagination(data, total, page, limit) {
+  const totalPages = Math.ceil(total / limit)  <span class="cm">// 50 ventas / 10 por página = 5 páginas</span>
+  return {
+    data,
+    pagination: {
+      total,
+      page:        Number(page),
+      limit:       Number(limit),
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1
+    }
+  }
+}</pre>
+      </div>
+
+      <h3>// 4. cómo se consume desde el cliente</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 petición HTTP</span><span class="code-lang">bash</span></div>
+        <pre>GET /api/sales?page=2&limit=10
+GET /api/sales?page=1&limit=10&status=PENDING</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 respuesta</span><span class="code-lang">json</span></div>
+        <pre>{
+  "data": [ ...10 ventas... ],
+  "pagination": {
+    "total": 50,
+    "page": 2,
+    "limit": 10,
+    "totalPages": 5,
+    "hasNextPage": true,
+    "hasPrevPage": true
+  }
+}</pre>
+      </div>
+    </div>
+
+    <!-- PASO 21: SWAGGER -->
+    <div class="section" id="paso-21">
+      <div class="section-header">
+        <div class="step-number">21</div>
+        <div>
+          <div class="section-title">Swagger UI</div>
+          <div class="section-desc">Documentación interactiva autogenerada en /docs.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/shared/plugins/swagger.plugin.js</span><span class="code-lang">js</span></div>
+        <pre>import fp from 'fastify-plugin'
+import fastifySwagger from '@fastify/swagger'
+import fastifySwaggerUi from '@fastify/swagger-ui'
+
+export const swaggerPlugin = fp(async (fastify) => {
+  fastify.register(fastifySwagger, {
+    openapi: {
+      info: { title: 'Ventas API', version: '1.0.0' },
+      components: {
+        securitySchemes: {
+          bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }
+        }
+      }
+    }
+  })
+
+  fastify.register(fastifySwaggerUi, {
+    routePrefix: '/docs',
+    uiConfig: { docExpansion: 'list' }
+  })
+})</pre>
+      </div>
+
+      <div class="callout success">
+        <span class="callout-icon">📚</span>
+        <div>
+          <div class="callout-title">La documentación se genera sola</div>
+          <p>Los <code>schema: { tags, summary }</code> que defines en cada ruta aparecen automáticamente en <code>http://localhost:3000/docs</code>.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 22: RESUMEN -->
+    <div class="section" id="paso-22">
+      <div class="section-header">
+        <div class="step-number">22</div>
+        <div>
+          <div class="section-title">Resumen — Flujo Completo</div>
+          <div class="section-desc">Una petición de punta a punta.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 POST /api/sales — flujo completo</span><span class="code-lang">flow</span></div>
+        <pre>POST /api/sales
+  ↓
+1. @fastify/rate-limit     → ¿superó el límite de IP?
+  ↓
+2. CORS plugin             → ¿origen permitido?
+  ↓
+3. sales.routes.js         → preHandler: [requireAuth]
+  ↓
+4. auth.middleware.js      → verifica JWT → popula request.user
+  ↓
+5. sales.controller.js     → extrae request.body
+  ↓
+6. sales.schema.js (Zod)   → valida el body
+  ↓ error → ZodError → errorHandler → 400
+7. sales.service.js        → verifica stock, calcula total
+  ↓ error → statusCode 404/409 → errorHandler
+8. prisma.$transaction()   → crea venta + descuenta stock (atómico)
+  ↓ error → P2002/P2025 → errorHandler
+9. redis.del(`sale:...`)   → invalida caché si aplica
+  ↓
+10. pino log               → registra la operación con request-id
+  ↓
+11. reply.code(201).send() → respuesta al cliente</pre>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4>🧱 Separación real de capas</h4>
+          <p>Routes registra. Controller maneja HTTP. Service contiene reglas. Repository ejecuta queries. Cada función hace una sola cosa.</p>
+        </div>
+        <div class="card">
+          <h4>🔒 Seguridad en capas</h4>
+          <p>JWT autentica. requireRole autoriza. Zod valida. Prisma previene SQL injection. Rate limiting previene abuso.</p>
+        </div>
+        <div class="card">
+          <h4>⚡ Sin clases, sin TypeScript</h4>
+          <p>Todo son funciones exportadas. Simple de leer, testear y escalar. El mismo patrón que usa Fastify internamente.</p>
+        </div>
+        <div class="card">
+          <h4>📦 Módulos independientes</h4>
+          <p>Cada dominio (sales, auth, products, orders) vive en su carpeta con sus 4 capas. Agregar uno nuevo no toca los demás.</p>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<script>
+  window.addEventListener('scroll', () => {
+    const el = document.getElementById('progress')
+    const total = document.body.scrollHeight - window.innerHeight
+    el.style.width = (window.scrollY / total * 100) + '%'
+  })
+
+  function setActive(el) {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'))
+    el.classList.add('active')
+  }
+
+  const sections = document.querySelectorAll('[id]')
+  const navItems = document.querySelectorAll('.nav-item[href]')
+  window.addEventListener('scroll', () => {
+    let current = ''
+    sections.forEach(s => { if (window.scrollY >= s.offsetTop - 120) current = s.id })
+    navItems.forEach(n => n.classList.toggle('active', n.getAttribute('href') === '#' + current))
+  })
+</script>
+</body>
+</html>
