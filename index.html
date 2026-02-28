@@ -162,6 +162,9 @@
   <a class="nav-item active" href="#inicio-arq" onclick="setActive(this)"><span class="step-badge">→</span> Introducción</a>
   <a class="nav-item" href="#paso-1" onclick="setActive(this)"><span class="step-badge">01</span> Instalación</a>
   <a class="nav-item" href="#paso-2" onclick="setActive(this)"><span class="step-badge">02</span> Estructura</a>
+  <a class="nav-item" href="#paso-2b" onclick="setActive(this)"><span class="step-badge">2+</span> Nombrado</a>
+  <a class="nav-item" href="#paso-2c" onclick="setActive(this)"><span class="step-badge">2++</span> DTOs</a>
+  <a class="nav-item" href="#paso-2d" onclick="setActive(this)"><span class="step-badge">2+++</span> Entities</a>
   <a class="nav-item" href="#paso-3" onclick="setActive(this)"><span class="step-badge">03</span> Entorno (.env)</a>
   <a class="nav-item" href="#paso-4" onclick="setActive(this)"><span class="step-badge">04</span> App + Plugins</a>
 
@@ -344,53 +347,558 @@ npm init -y</pre>
         </div>
       </div>
 
-      <div class="folder-tree">
-<span class="tree-dir">ventas-api/</span>
-├── <span class="tree-dir">src/</span>
-│   ├── <span class="tree-file">main.js</span>                    <span class="tree-comment"># entry point</span>
-│   ├── <span class="tree-file">app.js</span>                     <span class="tree-comment"># configuración Fastify</span>
-│   │
-│   ├── <span class="tree-dir">config/</span>
-│   │   └── <span class="tree-file">env.js</span>                 <span class="tree-comment"># validación de variables de entorno</span>
-│   │
-│   ├── <span class="tree-dir">modules/</span>
-│   │   ├── <span class="tree-dir">sales/</span>
-│   │   │   ├── <span class="tree-file">sales.module.js</span>       <span class="tree-comment"># plugin Fastify — registra el módulo</span>
-│   │   │   ├── <span class="tree-file">sales.routes.js</span>       <span class="tree-layer layer-routes">Routes</span>
-│   │   │   ├── <span class="tree-file">sales.controller.js</span>   <span class="tree-layer layer-ctrl">Controller</span>
-│   │   │   ├── <span class="tree-file">sales.service.js</span>      <span class="tree-layer layer-svc">Service</span>
-│   │   │   ├── <span class="tree-file">sales.repository.js</span>   <span class="tree-layer layer-repo">Repository</span>
-│   │   │   └── <span class="tree-file">sales.schema.js</span>       <span class="tree-comment"># schemas Zod</span>
-│   │   │
-│   │   └── <span class="tree-dir">auth/</span>
-│   │       ├── <span class="tree-file">auth.module.js</span>
-│   │       ├── <span class="tree-file">auth.routes.js</span>
-│   │       ├── <span class="tree-file">auth.controller.js</span>
-│   │       ├── <span class="tree-file">auth.service.js</span>
-│   │       └── <span class="tree-file">auth.schema.js</span>
-│   │
-│   └── <span class="tree-dir">shared/</span>
-│       ├── <span class="tree-dir">plugins/</span>
-│       │   ├── <span class="tree-file">prisma.plugin.js</span>
-│       │   ├── <span class="tree-file">jwt.plugin.js</span>
-│       │   ├── <span class="tree-file">cors.plugin.js</span>
-│       │   ├── <span class="tree-file">redis.plugin.js</span>
-│       │   └── <span class="tree-file">swagger.plugin.js</span>
-│       ├── <span class="tree-dir">middlewares/</span>
-│       │   ├── <span class="tree-file">auth.middleware.js</span>
-│       │   └── <span class="tree-file">roles.middleware.js</span>
-│       ├── <span class="tree-dir">errors/</span>
-│       │   └── <span class="tree-file">error-handler.js</span>
-│       └── <span class="tree-dir">utils/</span>
-│           ├── <span class="tree-file">pagination.js</span>
-│           └── <span class="tree-file">sanitize.js</span>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📁 ventas-api/</span><span class="code-lang">tree</span></div>
+        <pre>ventas-api/
 │
-├── <span class="tree-dir">prisma/</span>
-│   └── <span class="tree-file">schema.prisma</span>
-├── <span class="tree-dir">uploads/</span>
-├── <span class="tree-file">.env</span>
-└── <span class="tree-file">package.json</span>
+├── src/
+│   ├── main.js                       # entry point — inicia el servidor
+│   ├── app.js                        # configura Fastify, plugins y módulos
+│   │
+│   ├── config/
+│   │   └── env.js                    # valida variables de entorno con Zod
+│   │
+│   ├── modules/                      # un módulo por dominio de negocio
+│   │   │
+│   │   ├── sales/
+│   │   │   ├── sales.module.js       # plugin Fastify — registra el módulo
+│   │   │   ├── sales.routes.js       # URLs, métodos y middlewares
+│   │   │   ├── sales.controller.js   # maneja request y reply HTTP
+│   │   │   ├── sales.service.js      # lógica y reglas de negocio
+│   │   │   ├── sales.repository.js   # consultas a la base de datos
+│   │   │   └── sales.schema.js       # schemas de validación Zod
+│   │   │
+│   │   └── auth/
+│   │       ├── auth.module.js
+│   │       ├── auth.routes.js
+│   │       ├── auth.controller.js
+│   │       ├── auth.service.js
+│   │       └── auth.schema.js
+│   │
+│   └── shared/                       # código compartido entre módulos
+│       ├── plugins/
+│       │   ├── prisma.plugin.js      # cliente PostgreSQL
+│       │   ├── jwt.plugin.js         # autenticación JWT
+│       │   ├── cors.plugin.js        # control de orígenes
+│       │   ├── redis.plugin.js       # caché Redis
+│       │   └── swagger.plugin.js     # documentación API
+│       │
+│       ├── middlewares/
+│       │   ├── auth.middleware.js    # verifica el token JWT
+│       │   └── roles.middleware.js   # verifica el rol del usuario
+│       │
+│       ├── errors/
+│       │   └── error-handler.js     # manejador global de errores
+│       │
+│       └── utils/
+│           ├── pagination.js        # helper de paginación
+│           ├── sanitize.js          # sanitización de inputs
+│           └── file.utils.js        # generación de nombres seguros UUID
+│
+├── prisma/
+│   ├── schema.prisma                 # definición de modelos y relaciones
+│   └── migrations/                  # historial de cambios a la BD
+│
+├── uploads/                          # archivos subidos por usuarios
+├── .env                              # variables de entorno (no subir a git)
+└── package.json</pre>
       </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4>📁 modules/</h4>
+          <p>Cada carpeta es un dominio de negocio independiente con sus 4 capas. Agregar uno nuevo no toca los demás.</p>
+        </div>
+        <div class="card">
+          <h4>📁 shared/</h4>
+          <p>Código que usan todos los módulos: plugins de infraestructura, middlewares de seguridad, utilidades y manejo de errores.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 2B: NOMBRADO -->
+    <div class="section" id="paso-2b">
+      <div class="section-header">
+        <div class="step-number">2+</div>
+        <div>
+          <div class="section-title">Convenciones de Nombrado</div>
+          <div class="section-desc">Cómo se nombran archivos, carpetas, funciones, variables y constantes en este proyecto.</div>
+        </div>
+      </div>
+
+      <p>Un buen nombrado hace que el código sea predecible. Cuando ves un archivo, ya sabes qué contiene. Cuando ves una función, ya sabes qué hace. No necesitas leer el código para entenderlo.</p>
+
+      <h3>// archivos — kebab-case con sufijo de capa</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 patrón: nombre-modulo.capa.js</span><span class="code-lang">bash</span></div>
+        <pre><span class="cm"># módulos — nombre del dominio + capa que representa</span>
+sales.module.js         <span class="cm"># plugin que registra el módulo</span>
+sales.routes.js         <span class="cm"># endpoints y middlewares</span>
+sales.controller.js     <span class="cm"># handlers HTTP</span>
+sales.service.js        <span class="cm"># lógica de negocio</span>
+sales.repository.js     <span class="cm"># consultas a la BD</span>
+sales.schema.js         <span class="cm"># schemas de validación Zod</span>
+
+<span class="cm"># shared — nombre descriptivo + tipo de archivo</span>
+auth.middleware.js       <span class="cm"># middleware de autenticación</span>
+roles.middleware.js      <span class="cm"># middleware de roles</span>
+error-handler.js         <span class="cm"># manejador de errores</span>
+prisma.plugin.js         <span class="cm"># plugin de Prisma</span>
+jwt.plugin.js            <span class="cm"># plugin de JWT</span>
+pagination.js            <span class="cm"># utilidad de paginación</span>
+file.utils.js            <span class="cm"># utilidades de archivos</span>
+
+<span class="cm"># regla: kebab-case (minúsculas con guiones)</span>
+<span class="cm"># ✅ sales-items.repository.js</span>
+<span class="cm"># ❌ SalesItems.Repository.js</span>
+<span class="cm"># ❌ salesItemsRepository.js</span></pre>
+      </div>
+
+      <h3>// carpetas — kebab-case, nombre del dominio</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 carpetas</span><span class="code-lang">bash</span></div>
+        <pre><span class="cm"># módulos — nombre del dominio en singular o plural según contexto</span>
+modules/sales/          <span class="cm"># ✅</span>
+modules/auth/           <span class="cm"># ✅</span>
+modules/products/       <span class="cm"># ✅</span>
+modules/orders/         <span class="cm"># ✅</span>
+
+<span class="cm"># shared — nombre descriptivo del propósito</span>
+shared/plugins/         <span class="cm"># ✅</span>
+shared/middlewares/     <span class="cm"># ✅</span>
+shared/errors/          <span class="cm"># ✅</span>
+shared/utils/           <span class="cm"># ✅</span>
+
+<span class="cm"># ❌ evitar</span>
+modules/Sales/          <span class="cm"># no mayúsculas</span>
+modules/sale_module/    <span class="cm"># no underscores en carpetas</span>
+modules/saleModule/     <span class="cm"># no camelCase en carpetas</span></pre>
+      </div>
+
+      <h3>// funciones — camelCase, verbo + sustantivo</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 funciones por capa</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// repository — verbo de datos + modelo</span>
+findAllSales()          <span class="cm"># find = buscar, All = todos</span>
+findSaleById()          <span class="cm"># find = buscar, By = por criterio</span>
+createSale()            <span class="cm"># create = crear</span>
+updateSale()            <span class="cm"># update = actualizar</span>
+deleteById()            <span class="cm"># delete = eliminar</span>
+
+<span class="cm">// service — verbo de negocio + modelo</span>
+getAllSales()            <span class="cm"># get = obtener (con lógica)</span>
+getSaleById()           <span class="cm"># get = obtener con verificaciones</span>
+createSale()            <span class="cm"># create = crear con reglas</span>
+updateSaleStatus()      <span class="cm"># update + qué se actualiza</span>
+removeSale()            <span class="cm"># remove = eliminar con permisos</span>
+
+<span class="cm">// controller — handler al final siempre</span>
+listSalesHandler()      <span class="cm"># list = listado paginado</span>
+getSaleHandler()        <span class="cm"># get = obtener uno</span>
+createSaleHandler()     <span class="cm"># create = crear</span>
+updateSaleHandler()     <span class="cm"># update = actualizar</span>
+deleteSaleHandler()     <span class="cm"># delete = eliminar</span>
+
+<span class="cm">// middlewares — require + qué verifica</span>
+requireAuth()           <span class="cm"># require = es requerido</span>
+requireRole()           <span class="cm"># require = es requerido</span></pre>
+      </div>
+
+      <h3>// variables — camelCase, nombre descriptivo</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 variables</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// ✅ nombres descriptivos — sabes qué contienen sin leerlos</span>
+const sale = await getSaleById(id)
+const requestUser = request.user
+const hasPermission = sale.userId === requestUser.id
+const totalPages = Math.ceil(total / limit)
+const cachedSale = await redis.get(key)
+const hashedPassword = await bcrypt.hash(password, 12)
+
+<span class="cm">// ✅ booleanos — prefijo is, has, can, should</span>
+const isAdmin = requestUser.role === 'ADMIN'
+const isOwner = sale.userId === requestUser.id
+const hasStock = product.stock >= item.quantity
+const isExpired = token.exp < Date.now()
+
+<span class="cm">// ❌ evitar — no descriptivos</span>
+const s = await getSaleById(id)     <span class="cm"># ¿qué es s?</span>
+const data = await getSaleById(id)  <span class="cm"># demasiado genérico</span>
+const x = request.user              <span class="cm"># sin sentido</span></pre>
+      </div>
+
+      <h3>// constantes — UPPER_SNAKE_CASE</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 constantes</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// valores que nunca cambian — mayúsculas con underscores</span>
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const MAX_LOGIN_ATTEMPTS = 5
+const CACHE_TTL = 300          <span class="cm"># 5 minutos en segundos</span>
+const DEFAULT_PAGE_SIZE = 10
+
+<span class="cm">// ✅ fácil de identificar en el código que es un valor fijo</span>
+<span class="cm">// ❌ evitar magic numbers — números sin nombre</span>
+await redis.set(key, data, 'EX', 300)      <span class="cm"># ¿qué es 300?</span>
+await redis.set(key, data, 'EX', CACHE_TTL) <span class="cm"># ✅ claro</span></pre>
+      </div>
+
+      <h3>// exports — qué exportar y cómo</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 exports</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// ✅ named exports para funciones — permite importar solo lo que necesitas</span>
+export async function findSaleById(id) { ... }
+export async function createSale(data) { ... }
+
+<span class="cm">// ✅ named exports para plugins y constantes</span>
+export const prismaPlugin = fp(async (fastify) => { ... })
+export const prisma = new PrismaClient()
+
+<span class="cm">// ✅ al importar — desestructurar solo lo necesario</span>
+import { findSaleById, createSale } from './sales.repository.js'
+import { prisma } from '../../shared/plugins/prisma.plugin.js'
+
+<span class="cm">// ❌ evitar default exports en este proyecto</span>
+<span class="cm">// con named exports el editor sabe exactamente qué existe en cada archivo</span>
+export default function createSale() { ... }  <span class="cm"># dificulta el autocompletado</span></pre>
+      </div>
+
+      <h3>// schemas Zod — nombre del recurso + Schema</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 schemas</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// patrón: acción + modelo + Schema</span>
+export const createSaleSchema = z.object({ ... })
+export const updateSaleSchema = z.object({ ... })
+export const getSalesQuerySchema = z.object({ ... })
+
+export const registerSchema = z.object({ ... })
+export const loginSchema = z.object({ ... })</pre>
+      </div>
+
+      <div class="callout success">
+        <span class="callout-icon">✅</span>
+        <div>
+          <div class="callout-title">Resumen de convenciones</div>
+          <p>
+            <strong>Archivos y carpetas</strong> → kebab-case con sufijo de capa<br>
+            <strong>Funciones y variables</strong> → camelCase con verbo descriptivo<br>
+            <strong>Constantes</strong> → UPPER_SNAKE_CASE<br>
+            <strong>Booleanos</strong> → prefijo is, has, can, should<br>
+            <strong>Handlers</strong> → siempre terminan en Handler<br>
+            <strong>Schemas</strong> → acción + modelo + Schema
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PASO 2C: DTO -->
+    <div class="section" id="paso-2c">
+      <div class="section-header">
+        <div class="step-number">2++</div>
+        <div>
+          <div class="section-title">DTOs — Data Transfer Objects</div>
+          <div class="section-desc">Objetos que definen exactamente qué datos se transfieren entre el cliente y el servidor.</div>
+        </div>
+      </div>
+
+      <p>DTO significa <strong>Data Transfer Object</strong>. Es un objeto que define la forma exacta de los datos que viajan entre capas — qué campos acepta, qué tipos tienen, cuáles son obligatorios y cuáles opcionales. No tiene lógica, solo estructura y validación.</p>
+
+      <div class="callout info">
+        <span class="callout-icon">💡</span>
+        <div>
+          <div class="callout-title">En este proyecto los schemas Zod son los DTOs</div>
+          <p>En frameworks como NestJS o en lenguajes como Java, los DTOs son clases separadas con decoradores. En nuestro proyecto con JavaScript funcional, <strong>los schemas de Zod cumplen exactamente esa función</strong> — definen la forma de los datos, los validan y los transforman.</p>
+        </div>
+      </div>
+
+      <h3>// qué problema resuelven los DTOs</h3>
+      <div class="compare">
+        <div class="compare-box bad">
+          <div class="compare-header">❌ Sin DTO — cualquier dato entra</div>
+          <pre>export async function createSaleHandler(request, reply) {
+  // el body puede traer cualquier cosa
+  // { items: "hola" }
+  // { items: [{ productId: 123, quantity: -5 }] }
+  // { items: [], malicious: "DROP TABLE sales" }
+  const sale = await createSale(request.body)
+}</pre>
+        </div>
+        <div class="compare-box good">
+          <div class="compare-header">✅ Con DTO — solo datos válidos pasan</div>
+          <pre>export async function createSaleHandler(request, reply) {
+  // Zod valida la forma exacta
+  // si algo no cumple → ZodError → 400
+  const body = createSaleSchema.parse(request.body)
+  // body.items está garantizado como array de objetos
+  // con productId (UUID) y quantity (número positivo)
+  const sale = await createSale({ userId: request.user.id, items: body.items })
+}</pre>
+        </div>
+      </div>
+
+      <h3>// tipos de DTOs en el proyecto</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.schema.js</span><span class="code-lang">js</span></div>
+        <pre>import { z } from 'zod'
+
+<span class="cm">// DTO de entrada — datos que llegan en el body del POST</span>
+export const createSaleSchema = z.object({
+  items: z.array(z.object({
+    productId: z.string().uuid('ID de producto inválido'),
+    quantity:  z.number().int().positive('La cantidad debe ser mayor a 0')
+  })).min(1, 'Debes incluir al menos un producto')
+})
+
+<span class="cm">// DTO de actualización — datos del PATCH</span>
+<span class="cm">// solo acepta exactamente estos 3 valores — nada más pasa</span>
+export const updateSaleSchema = z.object({
+  status: z.enum(['PENDING', 'COMPLETED', 'CANCELLED'])
+})
+
+<span class="cm">// DTO de query — parámetros de búsqueda en la URL</span>
+<span class="cm">// coerce convierte strings a números automáticamente</span>
+<span class="cm">// default provee valores por defecto si no se envían</span>
+export const getSalesQuerySchema = z.object({
+  page:   z.coerce.number().int().positive().default(1),
+  limit:  z.coerce.number().int().positive().max(100).default(10),
+  status: z.enum(['PENDING', 'COMPLETED', 'CANCELLED']).optional(),
+  userId: z.string().uuid().optional()
+})</pre>
+      </div>
+
+      <h3>// lo que Zod hace automáticamente</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 capacidades de Zod como DTO</span><span class="code-lang">js</span></div>
+        <pre"><span class="cm">// 1. validación de tipos</span>
+z.string()              <span class="cm">// debe ser string</span>
+z.number()              <span class="cm">// debe ser número</span>
+z.boolean()             <span class="cm">// debe ser boolean</span>
+z.array(z.string())     <span class="cm">// debe ser array de strings</span>
+
+<span class="cm">// 2. validación de formato</span>
+z.string().uuid()       <span class="cm">// debe ser UUID válido</span>
+z.string().email()      <span class="cm">// debe ser email válido</span>
+z.string().min(8)       <span class="cm">// mínimo 8 caracteres</span>
+z.number().positive()   <span class="cm">// debe ser mayor a 0</span>
+z.number().max(100)     <span class="cm">// máximo 100</span>
+
+<span class="cm">// 3. transformación automática</span>
+z.coerce.number()       <span class="cm">// "10" → 10 (string a número)</span>
+z.string().trim()       <span class="cm">// "  hola  " → "hola"</span>
+z.string().toLowerCase() <span class="cm">// "ADMIN" → "admin"</span>
+
+<span class="cm">// 4. valores por defecto</span>
+z.number().default(1)   <span class="cm">// si no se envía, vale 1</span>
+z.string().default('PENDING') <span class="cm">// si no se envía, vale 'PENDING'</span>
+
+<span class="cm">// 5. campos opcionales vs requeridos</span>
+z.string()              <span class="cm">// requerido — lanza error si falta</span>
+z.string().optional()   <span class="cm">// opcional — puede no enviarse</span>
+z.string().nullable()   <span class="cm">// puede ser null</span></pre>
+      </div>
+
+      <h3>// cómo responde cuando el DTO falla</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 petición inválida</span><span class="code-lang">json</span></div>
+        <pre">// POST /api/sales con body inválido:
+{
+  "items": [
+    { "productId": "no-es-uuid", "quantity": -2 }
+  ]
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 respuesta automática — 400 Bad Request</span><span class="code-lang">json</span></div>
+        <pre">{
+  "statusCode": 400,
+  "error": "Validation Error",
+  "message": "Datos inválidos",
+  "details": [
+    { "field": "items.0.productId", "message": "ID de producto inválido" },
+    { "field": "items.0.quantity",  "message": "La cantidad debe ser mayor a 0" }
+  ]
+}</pre>
+      </div>
+
+      <h3>// DTOs vs NestJS — la diferencia</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 comparación</span><span class="code-lang">js</span></div>
+        <pre"><span class="cm">// NestJS — DTO como clase con decoradores</span>
+export class CreateSaleDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  items: SaleItemDto[]
+}
+
+<span class="cm">// Fastify funcional — DTO como schema Zod</span>
+export const createSaleSchema = z.object({
+  items: z.array(z.object({
+    productId: z.string().uuid(),
+    quantity:  z.number().int().positive()
+  }))
+})
+
+<span class="cm">// mismo concepto — diferente implementación</span>
+<span class="cm">// Zod tiene la ventaja de no necesitar TypeScript ni clases</span></pre>
+      </div>
+
+      <div class="callout success">
+        <span class="callout-icon">✅</span>
+        <div>
+          <div class="callout-title">Resumen</div>
+          <p>Un DTO define qué datos acepta tu API. En este proyecto los schemas Zod son los DTOs. Hay 3 tipos: <strong>body</strong> (POST/PATCH), <strong>query</strong> (parámetros de URL) y <strong>params</strong> (variables en la ruta como <code>:id</code>). Si los datos no cumplen el DTO, Zod lanza un error y el errorHandler devuelve un 400 automáticamente.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PASO 2D: ENTITIES -->
+    <div class="section" id="paso-2d">
+      <div class="section-header">
+        <div class="step-number">2+++</div>
+        <div>
+          <div class="section-title">Entities — Entidades</div>
+          <div class="section-desc">La representación de un objeto real que existe en la base de datos con identidad única.</div>
+        </div>
+      </div>
+
+      <p>Una entidad es un objeto del mundo real que tiene <strong>identidad única</strong> y <strong>persiste en la base de datos</strong>. Cada tabla de tu BD es una entidad. A diferencia de un DTO que es temporal y solo transporta datos, una entidad existe, tiene un <code>id</code> propio y puede cambiar de estado a lo largo del tiempo.</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4>📦 DTO</h4>
+          <p>Lo que el cliente <strong>envía</strong>. Temporal, sin identidad, sin <code>id</code>. Solo define la forma de los datos que entran.</p>
+        </div>
+        <div class="card">
+          <h4>🗃️ Entity</h4>
+          <p>Lo que <strong>existe en la BD</strong>. Tiene <code>id</code> único, fechas, relaciones y estado. Persiste entre peticiones.</p>
+        </div>
+      </div>
+
+      <h3>// en este proyecto los modelos Prisma son las entidades</h3>
+      <p>En NestJS o Java las entidades son clases con decoradores. Aquí cada <code>model</code> del schema Prisma define una entidad — su estructura, sus campos y sus relaciones con otras entidades.</p>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 prisma/schema.prisma — entidades del proyecto</span><span class="code-lang">prisma</span></div>
+        <pre><span class="cm">// Entity: User — representa un usuario real en el sistema</span>
+model User {
+  id        String   @id @default(uuid())  <span class="cm">// identidad única</span>
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())       <span class="cm">// cuándo fue creado</span>
+  sales     Sale[]                          <span class="cm">// relación con la entidad Sale</span>
+}
+
+<span class="cm">// Entity: Sale — representa una venta real</span>
+model Sale {
+  id        String     @id @default(uuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  total     Decimal    @db.Decimal(10, 2)
+  status    SaleStatus @default(PENDING)   <span class="cm">// estado que cambia con el tiempo</span>
+  items     SaleItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt          <span class="cm">// cuándo fue modificado por última vez</span>
+}
+
+<span class="cm">// Entity: Product — representa un producto real</span>
+model Product {
+  id          String     @id @default(uuid())
+  name        String
+  price       Decimal    @db.Decimal(10, 2)
+  stock       Int        @default(0)       <span class="cm">// estado que cambia con cada venta</span>
+  createdAt   DateTime   @default(now())
+  saleItems   SaleItem[]
+}
+
+<span class="cm">// Entity: SaleItem — representa un ítem dentro de una venta</span>
+<span class="cm">// es una entidad de relación entre Sale y Product</span>
+model SaleItem {
+  id        String  @id @default(uuid())
+  saleId    String
+  sale      Sale    @relation(fields: [saleId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)    <span class="cm">// precio al momento de la venta</span>
+}</pre>
+      </div>
+
+      <h3>// DTO de entrada vs Entity de salida</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 flujo completo — POST /api/sales</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// 1. el cliente envía un DTO — solo los datos necesarios para crear</span>
+POST /api/sales
+{
+  "items": [
+    { "productId": "abc-123", "quantity": 2 }
+  ]
+}
+
+<span class="cm">// 2. Zod valida el DTO — forma correcta, tipos correctos</span>
+const body = createSaleSchema.parse(request.body)
+
+<span class="cm">// 3. el service usa el DTO para crear la Entity en la BD</span>
+const sale = await createSale({ userId: request.user.id, items: body.items })
+
+<span class="cm">// 4. Prisma devuelve la Entity completa — con id, fechas y relaciones</span>
+{
+  "id":        "550e8400-e29b-41d4-a716-446655440000",   // identidad única
+  "userId":    "abc-123",
+  "total":     150.00,
+  "status":    "PENDING",
+  "createdAt": "2026-02-28T21:00:00.000Z",
+  "updatedAt": "2026-02-28T21:00:00.000Z",
+  "items": [
+    {
+      "id":        "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      "productId": "abc-123",
+      "quantity":  2,
+      "unitPrice": 75.00
+    }
+  ]
+}</pre>
+      </div>
+
+      <h3>// relaciones entre entidades</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 tipos de relaciones</span><span class="code-lang">bash</span></div>
+        <pre>User  →  Sale      : 1 usuario puede tener N ventas       (1:N)
+Sale  →  SaleItem  : 1 venta puede tener N ítems          (1:N)
+SaleItem → Product : N ítems pueden referenciar 1 producto (N:1)
+
+<span class="cm"># en Prisma las relaciones se definen con @relation</span>
+<span class="cm"># el campo con @relation es la llave foránea (FK)</span>
+userId String
+user   User @relation(fields: [userId], references: [id])
+<span class="cm">#                              ↑ FK local    ↑ PK de User</span></pre>
+      </div>
+
+      <h3>// Entity vs DTO — comparación final</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 diferencias clave</span><span class="code-lang">bash</span></div>
+        <pre>                    DTO                     Entity
+──────────────────────────────────────────────────────────────
+Dónde vive          Schema Zod              Model Prisma
+Tiene id            ❌ no                   ✅ siempre
+Persiste en BD      ❌ no                   ✅ sí
+Tiene fechas        ❌ no                   ✅ createdAt, updatedAt
+Lo envía            El cliente              Lo devuelve Prisma
+Propósito           Validar entrada         Representar datos reales
+Cuándo se usa       Al recibir petición     Al leer/escribir en BD</pre>
+      </div>
+
+      <div class="callout success">
+        <span class="callout-icon">✅</span>
+        <div>
+          <div class="callout-title">Resumen</div>
+          <p>Los <strong>modelos Prisma son las entidades</strong> — representan objetos reales con identidad propia que persisten en la BD. Los <strong>schemas Zod son los DTOs</strong> — definen y validan los datos que entran desde el cliente. El flujo siempre es: DTO entra → service procesa → Entity se guarda → Entity completa sale.</p>
+        </div>
+      </div>
+
     </div>
 
     <!-- PASO 3 -->
@@ -544,15 +1052,51 @@ try {
         <div class="step-number">05</div>
         <div>
           <div class="section-title">Prisma ORM + PostgreSQL</div>
-          <div class="section-desc">Schema, migraciones y cliente compartido.</div>
+          <div class="section-desc">Instalación, configuración, schema, migraciones y cliente compartido en Fastify.</div>
         </div>
       </div>
 
-      <div class="code-block">
-        <div class="code-header"><span class="code-filename">💻 terminal</span><span class="code-lang">bash</span></div>
-        <pre>npx prisma init</pre>
+      <p>Prisma es un ORM que te permite interactuar con la base de datos usando JavaScript en lugar de SQL. A diferencia de Next.js donde Prisma se integra casi automáticamente, en Fastify hay que configurarlo manualmente como un plugin para que el cliente sea compartido en toda la app.</p>
+
+      <div class="callout info">
+        <span class="callout-icon">💡</span>
+        <div>
+          <div class="callout-title">Diferencia con Next.js</div>
+          <p>En Next.js el servidor maneja el ciclo de vida de Prisma por ti. En Fastify tú controlas cuándo se conecta y cuándo se desconecta. Por eso necesitas crear un plugin que registre el cliente y lo cierre correctamente cuando la app se apague.</p>
+        </div>
       </div>
 
+      <h3>// 1. instalación</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">💻 terminal</span><span class="code-lang">bash</span></div>
+        <pre><span class="cm"># cliente de Prisma para producción</span>
+npm install @prisma/client
+
+<span class="cm"># CLI de Prisma solo para desarrollo (migraciones, studio, etc.)</span>
+npm install -D prisma</pre>
+      </div>
+
+      <h3>// 2. inicializar Prisma</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">💻 terminal</span><span class="code-lang">bash</span></div>
+        <pre>npx prisma init
+
+<span class="cm"># esto crea dos cosas:</span>
+<span class="cm"># prisma/schema.prisma  → donde defines tus modelos</span>
+<span class="cm"># .env                  → con DATABASE_URL para conectar a PostgreSQL</span></pre>
+      </div>
+
+      <h3>// 3. configurar la conexión en .env</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 .env</span><span class="code-lang">env</span></div>
+        <pre><span class="cm"># formato: postgresql://usuario:password@host:puerto/nombre_db</span>
+DATABASE_URL="postgresql://postgres:password@localhost:5432/ventas_db"
+
+<span class="cm"># si usas Supabase, Neon u otro proveedor cloud,</span>
+<span class="cm"># copian la URL directamente desde su dashboard</span></pre>
+      </div>
+
+      <h3>// 4. definir el schema — los modelos son las tablas</h3>
       <div class="code-block">
         <div class="code-header"><span class="code-filename">📄 prisma/schema.prisma</span><span class="code-lang">prisma</span></div>
         <pre>generator client {
@@ -561,17 +1105,19 @@ try {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL")  <span class="cm">// lee del .env</span>
 }
 
+<span class="cm">// cada model se convierte en una tabla en PostgreSQL</span>
+<span class="cm">// @@map("users") define el nombre real de la tabla en la BD</span>
 model User {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid())   <span class="cm">// UUID como primary key</span>
   name      String
-  email     String   @unique
+  email     String   @unique               <span class="cm">// índice único</span>
   password  String
   role      Role     @default(USER)
   createdAt DateTime @default(now())
-  sales     Sale[]
+  sales     Sale[]                          <span class="cm">// relación 1:N con Sale</span>
 
   @@map("users")
 }
@@ -579,8 +1125,8 @@ model User {
 model Product {
   id          String     @id @default(uuid())
   name        String
-  description String?
-  price       Decimal    @db.Decimal(10, 2)
+  description String?                       <span class="cm">// ? = campo opcional (nullable)</span>
+  price       Decimal    @db.Decimal(10, 2) <span class="cm">// 10 dígitos, 2 decimales</span>
   stock       Int        @default(0)
   imageUrl    String?
   createdAt   DateTime   @default(now())
@@ -597,7 +1143,7 @@ model Sale {
   status    SaleStatus @default(PENDING)
   items     SaleItem[]
   createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  updatedAt DateTime   @updatedAt          <span class="cm">// se actualiza automáticamente</span>
 
   @@map("sales")
 }
@@ -614,31 +1160,164 @@ model SaleItem {
   @@map("sale_items")
 }
 
-enum Role     { USER ADMIN }
+enum Role       { USER ADMIN }
 enum SaleStatus { PENDING COMPLETED CANCELLED }</pre>
       </div>
 
+      <h3>// 5. comandos esenciales</h3>
       <div class="code-block">
-        <div class="code-header"><span class="code-filename">💻 terminal</span><span class="code-lang">bash</span></div>
-        <pre>npx prisma migrate dev --name init
-npx prisma generate</pre>
+        <div class="code-header"><span class="code-filename">💻 terminal — comandos Prisma</span><span class="code-lang">bash</span></div>
+        <pre><span class="cm"># crear la migración y aplicarla en la BD</span>
+<span class="cm"># genera un archivo SQL en prisma/migrations/ con los cambios</span>
+npx prisma migrate dev --name init
+
+<span class="cm"># después de cada cambio al schema, ejecutar de nuevo:</span>
+npx prisma migrate dev --name agregar-campo-descripcion
+
+<span class="cm"># generar el cliente JS basado en el schema actual</span>
+<span class="cm"># esto actualiza el autocompletado e intellisense en tu editor</span>
+<span class="cm"># ejecutar siempre después de migrate dev</span>
+npx prisma generate
+
+<span class="cm"># abrir Prisma Studio — interfaz visual para ver y editar los datos</span>
+npx prisma studio
+
+<span class="cm"># aplicar migraciones en producción (sin crear nuevas)</span>
+npx prisma migrate deploy
+
+<span class="cm"># formatear el schema.prisma</span>
+npx prisma format</pre>
       </div>
 
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <div>
+          <div class="callout-title">migrate dev vs migrate deploy</div>
+          <p><code>migrate dev</code> es para desarrollo — crea nuevas migraciones y las aplica. <code>migrate deploy</code> es para producción — solo aplica migraciones ya existentes sin crear nuevas. Nunca uses <code>migrate dev</code> en producción.</p>
+        </div>
+      </div>
+
+      <h3>// 6. plugin — cliente compartido en Fastify</h3>
+      <p>En Fastify necesitas crear una sola instancia del cliente Prisma y compartirla en toda la app. Si creas múltiples instancias, agotas las conexiones a la base de datos.</p>
       <div class="code-block">
         <div class="code-header"><span class="code-filename">📄 src/shared/plugins/prisma.plugin.js</span><span class="code-lang">js</span></div>
         <pre>import fp from 'fastify-plugin'
 import { PrismaClient } from '@prisma/client'
 
-<span class="cm">// instancia única compartida en toda la app</span>
-export const prisma = new PrismaClient({ log: ['warn', 'error'] })
+<span class="cm">// ✅ instancia única — compartida en toda la app</span>
+<span class="cm">// log: ['warn', 'error'] muestra advertencias y errores en consola</span>
+<span class="cm">// en desarrollo puedes agregar 'query' para ver el SQL generado</span>
+export const prisma = new PrismaClient({
+  log: ['warn', 'error']
+})
 
 export const prismaPlugin = fp(async (fastify) => {
+  <span class="cm">// decorate hace que fastify.prisma esté disponible en toda la app</span>
   fastify.decorate('prisma', prisma)
+
+  <span class="cm">// cuando la app se apaga, desconectar Prisma limpiamente</span>
+  <span class="cm">// sin esto, el proceso Node.js no terminaría correctamente</span>
   fastify.addHook('onClose', async () => {
     await prisma.$disconnect()
   })
 })</pre>
       </div>
+
+      <h3>// 7. registrar en app.js</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/app.js</span><span class="code-lang">js</span></div>
+        <pre>import { prismaPlugin } from './shared/plugins/prisma.plugin.js'
+
+export function buildApp() {
+  const app = Fastify({ ... })
+
+  <span class="cm">// registrar antes que los módulos</span>
+  <span class="cm">// así todos los módulos pueden acceder a fastify.prisma</span>
+  app.register(prismaPlugin)
+
+  app.register(salesModule, { prefix: '/api/sales' })
+  app.register(authModule,  { prefix: '/api/auth' })
+
+  return app
+}</pre>
+      </div>
+
+      <h3>// 8. cómo usar el cliente en los repositorios</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 uso en cualquier repository</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// importar la instancia compartida directamente</span>
+import { prisma } from '../../shared/plugins/prisma.plugin.js'
+
+<span class="cm">// operaciones básicas</span>
+await prisma.sale.findMany()                          <span class="cm">// SELECT *</span>
+await prisma.sale.findUnique({ where: { id } })       <span class="cm">// SELECT WHERE id = ?</span>
+await prisma.sale.findFirst({ where: { userId } })    <span class="cm">// SELECT LIMIT 1</span>
+await prisma.sale.create({ data: { ... } })           <span class="cm">// INSERT</span>
+await prisma.sale.update({ where: { id }, data })     <span class="cm">// UPDATE</span>
+await prisma.sale.delete({ where: { id } })           <span class="cm">// DELETE</span>
+await prisma.sale.count({ where: { status } })        <span class="cm">// COUNT</span></pre>
+      </div>
+
+      <h3>// 9. buenas prácticas con Prisma</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 buenas prácticas</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// ✅ usar select para no exponer campos sensibles</span>
+await prisma.user.findMany({
+  select: { id: true, name: true, email: true }
+  <span class="cm">// password nunca se incluye en la respuesta</span>
+})
+
+<span class="cm">// ✅ usar include para traer relaciones cuando las necesitas</span>
+await prisma.sale.findUnique({
+  where: { id },
+  include: { items: { include: { product: true } } }
+})
+
+<span class="cm">// ✅ transacciones para operaciones atómicas</span>
+await prisma.$transaction(async (tx) => {
+  await tx.sale.create(...)
+  await tx.product.update(...)
+})
+
+<span class="cm">// ✅ Promise.all para consultas independientes en paralelo</span>
+const [data, total] = await Promise.all([
+  prisma.sale.findMany({ ... }),
+  prisma.sale.count({ ... })
+])
+
+<span class="cm">// ❌ nunca crear múltiples instancias de PrismaClient</span>
+<span class="cm">// agota las conexiones a la BD</span>
+const prisma = new PrismaClient()  <span class="cm">// MAL — usar la instancia compartida</span>
+
+<span class="cm">// ❌ nunca usar $queryRawUnsafe con datos del usuario</span>
+<span class="cm">// vulnerable a SQL injection</span>
+prisma.$queryRawUnsafe(`SELECT * WHERE id = '${id}'`)  <span class="cm">// MAL</span>
+
+<span class="cm">// ✅ si necesitas SQL raw, usa el tagged template</span>
+prisma.$queryRaw`SELECT * FROM sales WHERE id = ${id}`  <span class="cm">// BIEN</span></pre>
+      </div>
+
+      <h3>// 10. ver el SQL que genera Prisma (debug)</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 activar logs de queries en desarrollo</span><span class="code-lang">js</span></div>
+        <pre>export const prisma = new PrismaClient({
+  log: [
+    { emit: 'event', level: 'query' },  <span class="cm">// ver el SQL generado</span>
+    'warn',
+    'error'
+  ]
+})
+
+<span class="cm">// escuchar eventos de query</span>
+prisma.$on('query', (e) => {
+  console.log('Query:', e.query)
+  console.log('Params:', e.params)
+  console.log('Duración:', e.duration + 'ms')
+})
+
+<span class="cm">// útil para detectar queries lentas o N+1 queries</span></pre>
+      </div>
+
     </div>
 
     <!-- PASO 6: REPOSITORY -->
@@ -647,49 +1326,70 @@ export const prismaPlugin = fp(async (fastify) => {
         <div class="step-number">06</div>
         <div>
           <div class="section-title">Repository — Capa de Datos</div>
-          <div class="section-desc">Solo funciones que hablan con la base de datos. Sin lógica de negocio.</div>
+          <div class="section-desc">La única capa que habla con la base de datos. Sin lógica de negocio, sin errores HTTP.</div>
+        </div>
+      </div>
+
+      <p>El repository es el traductor entre tu aplicación y la base de datos. Sus funciones tienen nombres descriptivos de lo que hacen a nivel de datos: <code>findAll</code>, <code>findById</code>, <code>create</code>, <code>update</code>, <code>deleteById</code>. Nada más.</p>
+
+      <div class="callout info">
+        <span class="callout-icon">📦</span>
+        <div>
+          <div class="callout-title">Regla de oro del repository</div>
+          <p>Si una función del repository empieza a tener <code>if</code>, validaciones o reglas de negocio, es una señal de que esa lógica debería estar en el service. El repository solo ejecuta la query — el service decide si se puede ejecutar.</p>
         </div>
       </div>
 
       <div class="compare">
         <div class="compare-box bad">
-          <div class="compare-header">❌ No hagas esto en el repository</div>
-          <pre>async function createSale(data) {
-  // validar stock aquí está MAL
-  // eso es lógica de negocio
-  if (product.stock === 0)
-    throw new Error('Sin stock')
-  ...
+          <div class="compare-header">❌ Lógica de negocio en el repository</div>
+          <pre>async function createSale({ userId, items }) {
+  // MAL — esto es lógica de negocio
+  for (const item of items) {
+    if (product.stock < item.quantity)
+      throw new Error('Sin stock')
+  }
+  // MAL — el repository no debería calcular el total
+  const total = items.reduce(...)
+  return prisma.sale.create(...)
 }</pre>
         </div>
         <div class="compare-box good">
-          <div class="compare-header">✅ El repository solo persiste datos</div>
-          <pre>async function createSale(data) {
-  // solo ejecuta la query
-  // el service ya validó todo
-  return prisma.sale.create(...)
+          <div class="compare-header">✅ Repository solo persiste datos</div>
+          <pre">async function createSale({ userId, items, total }) {
+  // BIEN — recibe los datos ya validados y calculados
+  // el service ya verificó el stock y calculó el total
+  return prisma.sale.create({
+    data: { userId, total, items: { create: items } }
+  })
 }</pre>
         </div>
       </div>
 
+      <h3>// buenas prácticas del repository</h3>
       <div class="code-block">
         <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.repository.js</span><span class="code-lang">js</span></div>
         <pre>import { prisma } from '../../shared/plugins/prisma.plugin.js'
 
+<span class="cm">// ✅ BUENA PRÁCTICA: usar select para exponer solo los campos necesarios</span>
+<span class="cm">// Nunca devolver campos sensibles como password, tokens, etc.</span>
 export async function findAllSales({ page = 1, limit = 10, status, userId } = {}) {
   const skip = (page - 1) * limit
   const where = {}
   if (status) where.status = status
   if (userId) where.userId = userId
 
+  <span class="cm">// ✅ BUENA PRÁCTICA: Promise.all para consultas en paralelo</span>
   const [data, total] = await Promise.all([
     prisma.sale.findMany({
       where,
       skip,
       take: limit,
       include: {
-        user: { select: { id: true, name: true, email: true } },
-        items: { include: { product: { select: { id: true, name: true } } } }
+        <span class="cm">// ✅ select solo los campos que el cliente necesita ver</span>
+        <span class="cm">// nunca incluir password u otros datos sensibles del usuario</span>
+        user:  { select: { id: true, name: true, email: true } },
+        items: { include: { product: { select: { id: true, name: true, price: true } } } }
       },
       orderBy: { createdAt: 'desc' }
     }),
@@ -703,12 +1403,14 @@ export async function findSaleById(id) {
   return prisma.sale.findUnique({
     where: { id },
     include: {
-      user: { select: { id: true, name: true, email: true } },
+      user:  { select: { id: true, name: true, email: true } },
       items: { include: { product: true } }
     }
   })
 }
 
+<span class="cm">// ✅ BUENA PRÁCTICA: recibir los datos ya procesados del service</span>
+<span class="cm">// total e items ya fueron calculados y validados arriba</span>
 export async function createSale({ userId, items, total }) {
   return prisma.sale.create({
     data: {
@@ -732,6 +1434,26 @@ export async function deleteById(id) {
   return prisma.sale.delete({ where: { id } })
 }</pre>
       </div>
+
+      <h3>// qué NO debe hacer el repository</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 errores comunes a evitar</span><span class="code-lang">js</span></div>
+        <pre"><span class="cm">// ❌ lanzar errores HTTP — eso es del service o el errorHandler</span>
+if (!sale) throw { statusCode: 404, message: 'No encontrado' }
+
+<span class="cm">// ❌ validar reglas de negocio</span>
+if (sale.status === 'COMPLETED') throw new Error('No se puede modificar')
+
+<span class="cm">// ❌ devolver campos sensibles sin filtrar</span>
+return prisma.user.findMany()  <span class="cm">// incluye passwords!</span>
+
+<span class="cm">// ✅ en cambio, siempre usar select para campos sensibles</span>
+return prisma.user.findMany({
+  select: { id: true, name: true, email: true, role: true }
+  <span class="cm">// password nunca se incluye</span>
+})</pre>
+      </div>
+
     </div>
 
     <!-- PASO 7: SERVICE -->
@@ -740,7 +1462,20 @@ export async function deleteById(id) {
         <div class="step-number">07</div>
         <div>
           <div class="section-title">Service — Lógica de Negocio</div>
-          <div class="section-desc">Decide si la operación puede ejecutarse. Coordina repositorios. Ejecuta transacciones.</div>
+          <div class="section-desc">El cerebro del módulo. Decide si la operación puede ejecutarse, coordina repositorios y ejecuta transacciones.</div>
+        </div>
+      </div>
+
+      <p>El service es quien tiene el conocimiento del negocio. Sabe que no puedes vender más stock del que hay, que solo el dueño puede modificar su venta, que una venta completada no se puede cancelar. Esas reglas no las conoce nadie más.</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4>✅ Sí va en el service</h4>
+          <p>Verificar stock antes de vender. Calcular totales. Verificar permisos de negocio. Coordinar múltiples repositorios. Ejecutar transacciones atómicas.</p>
+        </div>
+        <div class="card">
+          <h4>❌ No va en el service</h4>
+          <p>Leer <code>request.body</code> o <code>request.params</code>. Devolver <code>reply.send()</code>. Validar formato de datos (eso es del schema). Ejecutar queries directas sin lógica.</p>
         </div>
       </div>
 
@@ -748,29 +1483,25 @@ export async function deleteById(id) {
         <span class="callout-icon">⚙️</span>
         <div>
           <div class="callout-title">¿Cuándo usar una transacción?</div>
-          <p>Cuando una operación toca múltiples tablas y debe ser atómica: si algo falla, todo se revierte. Ejemplo: crear una venta y descontar stock al mismo tiempo.</p>
+          <p>Cuando la operación toca múltiples tablas y debe ser todo o nada. Si algo falla en medio, Prisma revierte todo automáticamente. Ejemplo: crear venta + descontar stock. Si el descuento falla, la venta no debe crearse.</p>
         </div>
       </div>
 
       <div class="code-block">
         <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.service.js</span><span class="code-lang">js</span></div>
         <pre>import { prisma } from '../../shared/plugins/prisma.plugin.js'
-import {
-  findAllSales,
-  findSaleById,
-  updateSale,
-  deleteById
-} from './sales.repository.js'
+import { findAllSales, findSaleById, updateSale, deleteById } from './sales.repository.js'
 import { buildPagination } from '../../shared/utils/pagination.js'
 
-export async function getAllSales(query) {
-  const { page, limit, status, userId } = query
+export async function getAllSales({ page, limit, status, userId }) {
   const { data, total } = await findAllSales({ page, limit, status, userId })
   return buildPagination(data, total, page, limit)
 }
 
 export async function getSaleById(id) {
   const sale = await findSaleById(id)
+
+  <span class="cm">// regla: la venta debe existir</span>
   if (!sale) {
     const err = new Error('Venta no encontrada')
     err.statusCode = 404
@@ -780,39 +1511,41 @@ export async function getSaleById(id) {
 }
 
 export async function createSale({ userId, items }) {
-  <span class="cm">// Usamos transacción porque tocamos sale, sale_items y products</span>
+  <span class="cm">// transacción: todo o nada — si algo falla, nada se guarda</span>
   return prisma.$transaction(async (tx) => {
     let total = 0
     const saleItems = []
 
-    <span class="cm">// Regla: verificar existencia y stock de cada producto</span>
     for (const item of items) {
       const product = await tx.product.findUnique({ where: { id: item.productId } })
 
+      <span class="cm">// regla 1: el producto debe existir</span>
       if (!product) {
         const err = new Error(`Producto ${item.productId} no existe`)
         err.statusCode = 404
         throw err
       }
 
+      <span class="cm">// regla 2: debe haber suficiente stock</span>
       if (product.stock < item.quantity) {
         const err = new Error(`Stock insuficiente para "${product.name}". Disponible: ${product.stock}`)
         err.statusCode = 409
         throw err
       }
 
+      <span class="cm">// calcular precio y acumular total</span>
       const unitPrice = Number(product.price)
       total += unitPrice * item.quantity
       saleItems.push({ productId: item.productId, quantity: item.quantity, unitPrice })
     }
 
-    <span class="cm">// Crear la venta</span>
+    <span class="cm">// crear la venta con el total calculado</span>
     const sale = await tx.sale.create({
       data: { userId, total, items: { create: saleItems } },
       include: { items: { include: { product: true } } }
     })
 
-    <span class="cm">// Descontar stock de cada producto</span>
+    <span class="cm">// descontar stock — atómico con la creación de la venta</span>
     for (const item of items) {
       await tx.product.update({
         where: { id: item.productId },
@@ -826,20 +1559,22 @@ export async function createSale({ userId, items }) {
 
 export async function updateSaleStatus(id, data, requestUser) {
   const sale = await findSaleById(id)
+
+  <span class="cm">// regla 1: la venta debe existir</span>
   if (!sale) {
     const err = new Error('Venta no encontrada')
     err.statusCode = 404
     throw err
   }
 
-  <span class="cm">// Regla: solo el dueño o un admin puede modificar</span>
+  <span class="cm">// regla 2: solo el dueño o un admin puede modificar</span>
   if (sale.userId !== requestUser.id && requestUser.role !== 'ADMIN') {
     const err = new Error('No tienes permiso para modificar esta venta')
     err.statusCode = 403
     throw err
   }
 
-  <span class="cm">// Regla: una venta completada no se puede modificar</span>
+  <span class="cm">// regla 3: una venta completada no se puede modificar</span>
   if (sale.status === 'COMPLETED') {
     const err = new Error('No se puede modificar una venta completada')
     err.statusCode = 409
@@ -851,13 +1586,14 @@ export async function updateSaleStatus(id, data, requestUser) {
 
 export async function removeSale(id, requestUser) {
   const sale = await findSaleById(id)
+
   if (!sale) {
     const err = new Error('Venta no encontrada')
     err.statusCode = 404
     throw err
   }
 
-  <span class="cm">// Regla: solo admin puede eliminar ventas</span>
+  <span class="cm">// regla: solo admin puede eliminar ventas</span>
   if (requestUser.role !== 'ADMIN') {
     const err = new Error('Solo administradores pueden eliminar ventas')
     err.statusCode = 403
@@ -867,6 +1603,31 @@ export async function removeSale(id, requestUser) {
   return deleteById(id)
 }</pre>
       </div>
+
+      <h3>// buenas prácticas de seguridad en el service</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 prácticas recomendadas</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// ✅ 1. siempre verificar que el recurso existe antes de operar</span>
+const sale = await findSaleById(id)
+if (!sale) { err.statusCode = 404; throw err }
+
+<span class="cm">// ✅ 2. verificar propiedad del recurso — no solo autenticación</span>
+if (sale.userId !== requestUser.id && requestUser.role !== 'ADMIN') {
+  err.statusCode = 403; throw err
+}
+
+<span class="cm">// ✅ 3. usar transacciones para operaciones que tocan varias tablas</span>
+await prisma.$transaction(async (tx) => { ... })
+
+<span class="cm">// ✅ 4. errores descriptivos para el cliente pero sin exponer internos</span>
+const err = new Error('Stock insuficiente para "Laptop". Disponible: 3')
+<span class="cm">// ❌ nunca: new Error('Prisma error P2002 at constraint...')</span>
+
+<span class="cm">// ✅ 5. un service puede usar repositories de otros módulos</span>
+<span class="cm">// si necesitas datos de productos en el service de ventas, impórtalos</span>
+import { findProductById } from '../products/products.repository.js'</pre>
+      </div>
+
     </div>
 
     <!-- PASO 8: CONTROLLER -->
@@ -875,64 +1636,116 @@ export async function removeSale(id, requestUser) {
         <div class="step-number">08</div>
         <div>
           <div class="section-title">Controller — Capa HTTP</div>
-          <div class="section-desc">Solo maneja request y reply. No contiene lógica de negocio.</div>
+          <div class="section-desc">Extrae datos del request, ejecuta el schema, llama al service y devuelve la respuesta HTTP.</div>
         </div>
       </div>
 
-      <div class="callout success">
-        <span class="callout-icon">🎮</span>
-        <div>
-          <div class="callout-title">La responsabilidad del controller es mínima</div>
-          <p>Extrae los datos del request → llama al service → devuelve el resultado con el status code correcto. Nada más.</p>
-        </div>
+      <p>El controller es el intermediario entre el mundo HTTP y el service. Sabe leer un <code>request</code> y escribir un <code>reply</code>, pero no sabe nada de reglas de negocio. Si el controller empieza a tener <code>if</code> con lógica de negocio, es una señal de que esa lógica debería estar en el service.</p>
+
+      <h3>// qué extrae el controller de cada petición</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 partes del request que usa el controller</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// request.params → variables en la URL</span>
+<span class="cm">// GET /api/sales/123 → request.params.id = "123"</span>
+
+<span class="cm">// request.query → parámetros de búsqueda en la URL</span>
+<span class="cm">// GET /api/sales?page=2&status=PENDING → request.query = { page: "2", status: "PENDING" }</span>
+
+<span class="cm">// request.body → datos del POST/PATCH</span>
+<span class="cm">// POST /api/sales con { items: [...] } → request.body.items</span>
+
+<span class="cm">// request.user → datos del token JWT (lo pone requireAuth)</span>
+<span class="cm">// { id: "abc-123", email: "juan@mail.com", role: "USER" }</span></pre>
+      </div>
+
+      <h3>// códigos HTTP correctos por operación</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 referencia de status codes</span><span class="code-lang">bash</span></div>
+        <pre">GET    → 200 OK              (devuelve datos)
+POST   → 201 Created         (recurso creado)
+PATCH  → 200 OK              (recurso actualizado)
+DELETE → 204 No Content      (eliminado, sin body)
+Error  → 400/401/403/404/409 (manejados por errorHandler)</pre>
       </div>
 
       <div class="code-block">
         <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.controller.js</span><span class="code-lang">js</span></div>
-        <pre>import {
-  getAllSales,
-  getSaleById,
-  createSale,
-  updateSaleStatus,
-  removeSale
-} from './sales.service.js'
+        <pre>import { getAllSales, getSaleById, createSale, updateSaleStatus, removeSale } from './sales.service.js'
 import { getSalesQuerySchema, createSaleSchema, updateSaleSchema } from './sales.schema.js'
 import { sanitizeQuery } from '../../shared/utils/sanitize.js'
 
 export async function listSalesHandler(request, reply) {
+  <span class="cm">// 1. sanitizar y validar query params</span>
   const query = getSalesQuerySchema.parse(sanitizeQuery(request.query))
 
-  <span class="cm">// si no es admin, solo ve sus propias ventas</span>
+  <span class="cm">// 2. restricción de visibilidad según rol</span>
+  <span class="cm">// esta lógica va aquí porque depende de request.user (HTTP)</span>
   if (request.user.role !== 'ADMIN') {
-    query.userId = request.user.id
+    query.userId = request.user.id  <span class="cm">// USER solo ve sus ventas</span>
   }
 
+  <span class="cm">// 3. llamar al service y devolver resultado</span>
   const result = await getAllSales(query)
-  return reply.send(result)
+  return reply.send(result)  <span class="cm">// 200 OK por defecto</span>
 }
 
 export async function getSaleHandler(request, reply) {
+  <span class="cm">// params.id viene de la URL: GET /api/sales/abc-123</span>
   const sale = await getSaleById(request.params.id)
   return reply.send(sale)
 }
 
 export async function createSaleHandler(request, reply) {
+  <span class="cm">// 1. validar body con Zod — lanza ZodError si algo falla</span>
   const body = createSaleSchema.parse(request.body)
+
+  <span class="cm">// 2. llamar al service con los datos del usuario autenticado</span>
   const sale = await createSale({ userId: request.user.id, items: body.items })
+
+  <span class="cm">// 3. 201 Created — se creó un nuevo recurso</span>
   return reply.code(201).send(sale)
 }
 
 export async function updateSaleHandler(request, reply) {
   const body = updateSaleSchema.parse(request.body)
   const sale = await updateSaleStatus(request.params.id, body, request.user)
-  return reply.send(sale)
+  return reply.send(sale)  <span class="cm">// 200 OK</span>
 }
 
 export async function deleteSaleHandler(request, reply) {
   await removeSale(request.params.id, request.user)
-  return reply.code(204).send()
+  return reply.code(204).send()  <span class="cm">// 204 No Content — sin body</span>
 }</pre>
       </div>
+
+      <div class="compare">
+        <div class="compare-box bad">
+          <div class="compare-header">❌ Lógica de negocio en el controller</div>
+          <pre>export async function createSaleHandler(request, reply) {
+  // MAL — verificar stock aquí está FUERA de lugar
+  for (const item of request.body.items) {
+    const product = await prisma.product.findUnique(...)
+    if (product.stock < item.quantity)
+      return reply.code(409).send({ message: 'Sin stock' })
+  }
+  // MAL — acceder a prisma directamente desde el controller
+  const sale = await prisma.sale.create(...)
+}</pre>
+        </div>
+        <div class="compare-box good">
+          <div class="compare-header">✅ Controller limpio y simple</div>
+          <pre>export async function createSaleHandler(request, reply) {
+  // BIEN — solo valida, llama al service y responde
+  const body = createSaleSchema.parse(request.body)
+  const sale = await createSale({
+    userId: request.user.id,
+    items: body.items
+  })
+  return reply.code(201).send(sale)
+}</pre>
+        </div>
+      </div>
+
     </div>
 
     <!-- PASO 9: ROUTES + SCHEMA -->
@@ -941,35 +1754,78 @@ export async function deleteSaleHandler(request, reply) {
         <div class="step-number">09</div>
         <div>
           <div class="section-title">Routes + Schemas Zod</div>
-          <div class="section-desc">Registra endpoints, define schemas de validación y asigna middlewares.</div>
+          <div class="section-desc">Routes define URLs, métodos, middlewares y conectan con el controller. Schemas validan los datos de entrada.</div>
         </div>
       </div>
 
-      <h3>// schemas de validación</h3>
+      <p>Routes tiene 3 responsabilidades claras:</p>
+      <div class="grid-2">
+        <div class="card">
+          <h4>🔗 Lo que hace Routes</h4>
+          <p><strong>1.</strong> Define la URL y el método HTTP (GET, POST, PATCH, DELETE).<br><strong>2.</strong> Asigna los middlewares de seguridad en <code>preHandler</code>.<br><strong>3.</strong> Conecta con el handler del controller.</p>
+        </div>
+        <div class="card">
+          <h4>📋 Lo que hace Schema</h4>
+          <p>Define la forma exacta que deben tener los datos de entrada. Si el body no cumple el schema, Zod lanza un error que el errorHandler convierte en un 400 automáticamente.</p>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <span class="callout-icon">💡</span>
+        <div>
+          <div class="callout-title">Schema se define aquí, se ejecuta en el controller</div>
+          <p>Routes especifica qué schema usar para cada ruta. El controller es quien llama a <code>schema.parse()</code> y lo ejecuta realmente. La separación permite reutilizar el mismo schema en diferentes lugares si fuera necesario.</p>
+        </div>
+      </div>
+
+      <h3>// schemas Zod — validación de entrada</h3>
       <div class="code-block">
         <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.schema.js</span><span class="code-lang">js</span></div>
         <pre>import { z } from 'zod'
 
+<span class="cm">// schema para crear una venta</span>
+<span class="cm">// valida que el body tenga al menos un item con productId (UUID) y quantity (número positivo)</span>
 export const createSaleSchema = z.object({
   items: z.array(z.object({
     productId: z.string().uuid('ID de producto inválido'),
-    quantity: z.number().int().positive('La cantidad debe ser mayor a 0')
+    quantity:  z.number().int().positive('La cantidad debe ser mayor a 0')
   })).min(1, 'Debes incluir al menos un producto')
 })
 
+<span class="cm">// schema para actualizar estado</span>
+<span class="cm">// solo acepta uno de estos 3 valores exactos — nada más pasa</span>
 export const updateSaleSchema = z.object({
   status: z.enum(['PENDING', 'COMPLETED', 'CANCELLED'])
 })
 
+<span class="cm">// schema para query params de listado</span>
+<span class="cm">// coerce convierte el string de la URL a número automáticamente</span>
 export const getSalesQuerySchema = z.object({
   page:   z.coerce.number().int().positive().default(1),
   limit:  z.coerce.number().int().positive().max(100).default(10),
   status: z.enum(['PENDING', 'COMPLETED', 'CANCELLED']).optional(),
   userId: z.string().uuid().optional()
-})</pre>
+})
+
+<span class="cm">// si el body no cumple el schema, Zod lanza un ZodError</span>
+<span class="cm">// el errorHandler lo captura y devuelve un 400 con los campos inválidos</span></pre>
       </div>
 
-      <h3>// rutas</h3>
+      <h3>// qué pasa cuando el schema falla</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 respuesta cuando el body es inválido</span><span class="code-lang">json</span></div>
+        <pre">{
+  "statusCode": 400,
+  "error": "Validation Error",
+  "message": "Datos inválidos",
+  "details": [
+    { "field": "items.0.productId", "message": "ID de producto inválido" },
+    { "field": "items.0.quantity",  "message": "La cantidad debe ser mayor a 0" }
+  ]
+}</pre>
+      </div>
+
+      <h3>// routes — tabla de instrucciones de Fastify</h3>
       <div class="code-block">
         <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.routes.js</span><span class="code-lang">js</span></div>
         <pre>import { requireAuth } from '../../shared/middlewares/auth.middleware.js'
@@ -984,41 +1840,68 @@ import {
 
 export async function salesRoutes(fastify) {
 
-  <span class="cm">// GET /api/sales</span>
+  <span class="cm">// GET /api/sales — cualquier usuario autenticado</span>
+  <span class="cm">// preHandler ejecuta requireAuth ANTES del handler</span>
   fastify.get('/', {
     preHandler: [requireAuth],
-    schema: {
-      tags: ['Sales'],
-      summary: 'Listar ventas con paginación',
-      security: [{ bearerAuth: [] }]
-    }
+    schema: { tags: ['Sales'], summary: 'Listar ventas con paginación', security: [{ bearerAuth: [] }] }
   }, listSalesHandler)
 
-  <span class="cm">// GET /api/sales/:id</span>
+  <span class="cm">// GET /api/sales/:id — el :id es un parámetro dinámico</span>
+  <span class="cm">// llega al controller como request.params.id</span>
   fastify.get('/:id', {
     preHandler: [requireAuth],
     schema: { tags: ['Sales'], summary: 'Obtener venta por ID' }
   }, getSaleHandler)
 
-  <span class="cm">// POST /api/sales</span>
+  <span class="cm">// POST /api/sales — crear venta</span>
+  <span class="cm">// el body llega al controller como request.body</span>
   fastify.post('/', {
     preHandler: [requireAuth],
     schema: { tags: ['Sales'], summary: 'Crear nueva venta' }
   }, createSaleHandler)
 
-  <span class="cm">// PATCH /api/sales/:id</span>
+  <span class="cm">// PATCH /api/sales/:id — actualizar estado</span>
+  <span class="cm">// PATCH es para actualizaciones parciales, PUT es para reemplazos completos</span>
   fastify.patch('/:id', {
     preHandler: [requireAuth],
     schema: { tags: ['Sales'], summary: 'Actualizar estado de venta' }
   }, updateSaleHandler)
 
   <span class="cm">// DELETE /api/sales/:id — solo ADMIN</span>
+  <span class="cm">// preHandler ejecuta requireAuth primero, luego requireRole</span>
+  <span class="cm">// si requireAuth falla → 401. Si requireRole falla → 403</span>
+  <span class="cm">// el handler nunca llega a ejecutarse si alguno falla</span>
   fastify.delete('/:id', {
     preHandler: [requireAuth, requireRole('ADMIN')],
-    schema: { tags: ['Sales'], summary: 'Eliminar venta (admin)' }
+    schema: { tags: ['Sales'], summary: 'Eliminar venta (solo admin)' }
   }, deleteSaleHandler)
 }</pre>
       </div>
+
+      <h3>// flujo completo de una petición por las 4 capas</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 DELETE /api/sales/abc-123 — paso a paso</span><span class="code-lang">bash</span></div>
+        <pre>ROUTES        → Fastify recibe DELETE /api/sales/abc-123
+              → ejecuta preHandler: requireAuth → verifica JWT → request.user = { id, role }
+              → ejecuta preHandler: requireRole('ADMIN') → verifica role
+              → llama a deleteSaleHandler
+
+CONTROLLER    → extrae request.params.id = "abc-123"
+              → extrae request.user = { id: "xyz", role: "ADMIN" }
+              → llama a removeSale("abc-123", request.user)
+
+SERVICE       → llama a findSaleById("abc-123") → verifica que existe
+              → verifica que requestUser.role === 'ADMIN'
+              → llama a deleteById("abc-123")
+
+REPOSITORY    → prisma.sale.delete({ where: { id: "abc-123" } })
+              → devuelve el registro eliminado
+
+CONTROLLER    → recibe el resultado del service
+              → reply.code(204).send() → responde al cliente sin body</pre>
+      </div>
+
     </div>
 
     <!-- PASO 10: MÓDULO -->
@@ -1027,38 +1910,126 @@ export async function salesRoutes(fastify) {
         <div class="step-number">10</div>
         <div>
           <div class="section-title">Módulo — Plugin de Fastify</div>
-          <div class="section-desc">El módulo es el plugin que registra todo el módulo en Fastify.</div>
+          <div class="section-desc">El puente entre tu módulo y Fastify. Sin él, las rutas no existen para la app.</div>
         </div>
       </div>
 
+      <p>Cuando creas las rutas de ventas en <code>sales.routes.js</code>, Fastify todavía no sabe que existen. El <code>sales.module.js</code> es quien le dice a Fastify: <strong>"registra estas rutas y hazlas disponibles"</strong>. Sin este archivo, podrías tener todo el código perfecto pero ningún endpoint respondería.</p>
+
+      <h3>// por qué necesitas este archivo</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 sin sales.module.js — las rutas no existen</span><span class="code-lang">bash</span></div>
+        <pre>GET /api/sales     → 404 Not Found  ❌
+POST /api/sales    → 404 Not Found  ❌
+DELETE /api/sales  → 404 Not Found  ❌
+
+// Fastify no sabe que existen porque nadie las registró</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 con sales.module.js — las rutas funcionan</span><span class="code-lang">bash</span></div>
+        <pre>GET /api/sales     → 200 OK  ✅
+POST /api/sales    → 201 Created  ✅
+DELETE /api/sales  → 204 No Content  ✅
+
+// Fastify las conoce porque el módulo las registró</pre>
+      </div>
+
+      <h3>// qué hace fp() — fastify-plugin</h3>
+      <p>Sin <code>fp()</code>, cada plugin vive en su propio scope aislado y no puede ver los plugins del padre como <code>prisma</code>, <code>redis</code> o <code>jwt</code>. Con <code>fp()</code> el módulo comparte el mismo scope que <code>app.js</code> y puede acceder a todo.</p>
+
+      <div class="compare">
+        <div class="compare-box bad">
+          <div class="compare-header">❌ Sin fp() — scope aislado</div>
+          <pre>// sales.routes.js no puede acceder
+// a fastify.prisma ni fastify.redis
+// porque están en un scope diferente
+
+export const salesModule = async (fastify) => {
+  fastify.register(salesRoutes)
+  // salesRoutes no ve prisma ni redis ❌
+}</pre>
+        </div>
+        <div class="compare-box good">
+          <div class="compare-header">✅ Con fp() — scope compartido</div>
+          <pre">// sales.routes.js puede acceder
+// a fastify.prisma, fastify.redis, fastify.jwt
+// porque comparte el scope de app.js
+
+export const salesModule = fp(async (fastify) => {
+  fastify.register(salesRoutes)
+  // salesRoutes ve todo ✅
+})</pre>
+        </div>
+      </div>
+
+      <h3>// el archivo completo</h3>
       <div class="code-block">
         <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.module.js</span><span class="code-lang">js</span></div>
         <pre>import fp from 'fastify-plugin'
 import { salesRoutes } from './sales.routes.js'
 
-<span class="cm">// fp() hace que el plugin comparta el scope del padre</span>
-<span class="cm">// (necesario para acceder a fastify.prisma, fastify.redis, etc.)</span>
+<span class="cm">// fp() envuelve el plugin para compartir el scope con app.js</span>
 export const salesModule = fp(async (fastify) => {
+  <span class="cm">// registra todas las rutas de ventas en Fastify</span>
+  <span class="cm">// a partir de aquí GET /api/sales, POST /api/sales, etc. existen</span>
   fastify.register(salesRoutes)
 })</pre>
       </div>
 
-      <div class="callout info">
-        <span class="callout-icon">🔌</span>
+      <h3>// dónde se llama — en app.js</h3>
+      <p>Cada módulo se registra en <code>app.js</code> con un prefijo. Ese prefijo se antepone automáticamente a todas las rutas del módulo.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/app.js</span><span class="code-lang">js</span></div>
+        <pre>import { authModule }     from './modules/auth/auth.module.js'
+import { salesModule }    from './modules/sales/sales.module.js'
+import { productsModule } from './modules/products/products.module.js'
+
+export function buildApp() {
+  const app = Fastify({ ... })
+
+  <span class="cm">// prefix define la URL base de cada módulo</span>
+  app.register(authModule,     { prefix: '/api/auth' })
+  app.register(salesModule,    { prefix: '/api/sales' })
+  app.register(productsModule, { prefix: '/api/products' })
+
+  return app
+}
+
+<span class="cm">// las rutas quedan disponibles como:</span>
+<span class="cm">// /api/auth/login       → authModule</span>
+<span class="cm">// /api/auth/register    → authModule</span>
+<span class="cm">// /api/sales            → salesModule</span>
+<span class="cm">// /api/sales/:id        → salesModule</span>
+<span class="cm">// /api/products         → productsModule</span></pre>
+      </div>
+
+      <h3>// cómo crear un nuevo módulo desde cero</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 ejemplo — agregar módulo de órdenes</span><span class="code-lang">bash</span></div>
+        <pre">1. Crear la carpeta y archivos:
+   src/modules/orders/
+   ├── orders.module.js      ← el plugin
+   ├── orders.routes.js      ← rutas
+   ├── orders.controller.js  ← HTTP
+   ├── orders.service.js     ← negocio
+   ├── orders.repository.js  ← datos
+   └── orders.schema.js      ← validación
+
+2. Registrar en app.js:
+   app.register(ordersModule, { prefix: '/api/orders' })
+
+3. Listo — /api/orders ya responde</pre>
+      </div>
+
+      <div class="callout success">
+        <span class="callout-icon">✅</span>
         <div>
-          <div class="callout-title">¿Por qué fp() (fastify-plugin)?</div>
-          <p>Sin <code>fp()</code>, cada plugin tiene su propio scope encapsulado y no puede ver los decoradores del padre (como <code>fastify.prisma</code> o <code>fastify.redis</code>). Con <code>fp()</code> el plugin comparte el scope global.</p>
+          <div class="callout-title">Cada módulo es independiente</div>
+          <p>Agregar el módulo de órdenes no toca nada del módulo de ventas ni de productos. Cada módulo vive en su carpeta, tiene sus propias 4 capas, y solo se conecta a la app a través de <code>app.js</code>.</p>
         </div>
       </div>
 
-      <h3>// para agregar un nuevo módulo</h3>
-      <div class="code-block">
-        <div class="code-header"><span class="code-filename">📄 src/app.js — agregar módulos</span><span class="code-lang">js</span></div>
-        <pre>app.register(authModule,     { prefix: '/api/auth' })
-app.register(salesModule,    { prefix: '/api/sales' })
-app.register(productsModule, { prefix: '/api/products' })  <span class="cm">// nuevo</span>
-app.register(ordersModule,   { prefix: '/api/orders' })    <span class="cm">// nuevo</span></pre>
-      </div>
     </div>
 
     <!-- PASO 11: ARCHIVOS -->
@@ -1067,55 +2038,221 @@ app.register(ordersModule,   { prefix: '/api/orders' })    <span class="cm">// n
         <div class="step-number">11</div>
         <div>
           <div class="section-title">Subida de Archivos</div>
-          <div class="section-desc">Upload de imágenes con @fastify/multipart. Solo para admins.</div>
+          <div class="section-desc">Upload seguro de imágenes con UUID, validación de tipo y tamaño.</div>
         </div>
       </div>
 
+      <p>Cuando un usuario sube un archivo, el nombre original que trae es peligroso — puede contener rutas relativas, caracteres especiales o extensiones maliciosas. La solución es descartar el nombre original y generar uno nuevo con UUID, conservando solo la extensión.</p>
+
+      <div class="compare">
+        <div class="compare-box bad">
+          <div class="compare-header">❌ Nombre original — peligroso</div>
+          <pre>data.filename = "../../etc/passwd"
+data.filename = "malware.exe"
+data.filename = "foto bonita.jpg"
+data.filename = "imagen'con;caracteres.png"
+
+// cualquiera de estos puede causar problemas</pre>
+        </div>
+        <div class="compare-box good">
+          <div class="compare-header">✅ Nombre con UUID — seguro</div>
+          <pre>// UUID + extensión original validada
+"550e8400-e29b-41d4-a716-446655440000.jpg"
+"f47ac10b-58cc-4372-a567-0e02b2c3d479.png"
+"6ba7b810-9dad-11d1-80b4-00c04fd430c8.webp"
+
+// imposible de predecir o colisionar</pre>
+        </div>
+      </div>
+
+      <h3>// 1. instalación</h3>
       <div class="code-block">
-        <div class="code-header"><span class="code-filename">📄 fragmento en products.controller.js</span><span class="code-lang">js</span></div>
+        <div class="code-header"><span class="code-filename">💻 terminal</span><span class="code-lang">bash</span></div>
+        <pre>npm install @fastify/multipart @fastify/static</pre>
+      </div>
+
+      <h3>// 2. registrar multipart en app.js</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/app.js</span><span class="code-lang">js</span></div>
+        <pre>import multipart from '@fastify/multipart'
+import fastifyStatic from '@fastify/static'
+import path from 'path'
+import { env } from './config/env.js'
+
+export function buildApp() {
+  const app = Fastify({ ... })
+
+  <span class="cm">// habilitar subida de archivos</span>
+  app.register(multipart, {
+    limits: {
+      fileSize: Number(env.MAX_FILE_SIZE),  <span class="cm">// máximo 5MB por defecto</span>
+      files: 1                               <span class="cm">// solo un archivo por petición</span>
+    }
+  })
+
+  <span class="cm">// servir archivos estáticos desde la carpeta uploads</span>
+  <span class="cm">// así GET /uploads/archivo.jpg devuelve la imagen</span>
+  app.register(fastifyStatic, {
+    root: path.resolve(env.UPLOAD_DIR),
+    prefix: '/uploads/'
+  })
+
+  return app
+}</pre>
+      </div>
+
+      <h3>// 3. utilidad para generar nombres seguros</h3>
+      <p>UUID viene incluido en Node.js — no necesitas instalar nada extra.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/shared/utils/file.utils.js</span><span class="code-lang">js</span></div>
+        <pre>import { randomUUID } from 'crypto'  <span class="cm">// incluido en Node.js, sin instalación</span>
+import path from 'path'
+
+<span class="cm">// extensiones permitidas por tipo de uso</span>
+const ALLOWED_IMAGE_TYPES = {
+  'image/jpeg': '.jpg',
+  'image/png':  '.png',
+  'image/webp': '.webp',
+}
+
+<span class="cm">// genera un nombre seguro con UUID + extensión validada</span>
+export function generateSafeFilename(mimetype) {
+  const ext = ALLOWED_IMAGE_TYPES[mimetype]
+  if (!ext) return null  <span class="cm">// tipo no permitido</span>
+
+  const uuid = randomUUID()  <span class="cm">// ej: "550e8400-e29b-41d4-a716-446655440000"</span>
+  return `${uuid}${ext}`     <span class="cm">// ej: "550e8400-e29b-41d4-a716-446655440000.jpg"</span>
+}
+
+<span class="cm">// valida que el tipo MIME sea permitido</span>
+export function isAllowedImageType(mimetype) {
+  return mimetype in ALLOWED_IMAGE_TYPES
+}
+
+<span class="cm">// NO uses path.extname(data.filename) para obtener la extensión</span>
+<span class="cm">// un atacante puede enviar un archivo con extensión falsa</span>
+<span class="cm">// siempre deriva la extensión del mimetype, no del nombre original</span></pre>
+      </div>
+
+      <h3>// 4. controller — implementación completa</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/products/products.controller.js</span><span class="code-lang">js</span></div>
         <pre>import path from 'path'
 import fs from 'fs/promises'
 import { pipeline } from 'stream/promises'
 import { createWriteStream } from 'fs'
 import { prisma } from '../../shared/plugins/prisma.plugin.js'
 import { env } from '../../config/env.js'
+import { generateSafeFilename, isAllowedImageType } from '../../shared/utils/file.utils.js'
 
 export async function uploadProductImageHandler(request, reply) {
+  <span class="cm">// obtener el archivo de la petición multipart</span>
   const data = await request.file()
 
-  <span class="cm">// validar tipo MIME</span>
-  const allowed = ['image/jpeg', 'image/png', 'image/webp']
-  if (!allowed.includes(data.mimetype)) {
-    return reply.code(400).send({ message: 'Solo JPEG, PNG o WebP' })
+  if (!data) {
+    return reply.code(400).send({ message: 'No se envió ningún archivo' })
   }
 
-  <span class="cm">// nombre seguro — nunca usar data.filename directamente</span>
-  const ext = path.extname(data.filename).toLowerCase()
-  const filename = `product-${request.params.id}-${Date.now()}${ext}`
+  <span class="cm">// validar tipo MIME — derivado del archivo, no del nombre</span>
+  if (!isAllowedImageType(data.mimetype)) {
+    return reply.code(400).send({
+      message: 'Tipo de archivo no permitido. Solo JPEG, PNG o WebP'
+    })
+  }
+
+  <span class="cm">// generar nombre seguro con UUID + extensión del mimetype</span>
+  const filename = generateSafeFilename(data.mimetype)
+  <span class="cm">// ej: "550e8400-e29b-41d4-a716-446655440000.jpg"</span>
+
+  <span class="cm">// ruta absoluta donde se guardará físicamente</span>
   const filepath = path.join(env.UPLOAD_DIR, filename)
 
-  <span class="cm">// crear carpeta si no existe y guardar</span>
+  <span class="cm">// crear la carpeta uploads si no existe</span>
   await fs.mkdir(env.UPLOAD_DIR, { recursive: true })
+
+  <span class="cm">// guardar el archivo en disco usando streams</span>
+  <span class="cm">// pipeline maneja errores y cierra el stream correctamente</span>
   await pipeline(data.file, createWriteStream(filepath))
 
-  <span class="cm">// actualizar en BD</span>
+  <span class="cm">// URL pública accesible desde el frontend</span>
   const imageUrl = `/uploads/${filename}`
-  await prisma.product.update({
+
+  <span class="cm">// guardar la URL en la base de datos</span>
+  const product = await prisma.product.update({
     where: { id: request.params.id },
     data: { imageUrl }
   })
 
-  return reply.send({ imageUrl })
+  request.log.info(
+    { productId: request.params.id, filename, size: data.file.bytesRead },
+    'Imagen de producto subida'
+  )
+
+  return reply.send({ imageUrl, product })
+}</pre>
+      </div>
+
+      <h3>// 5. ruta para el upload</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/products/products.routes.js (fragmento)</span><span class="code-lang">js</span></div>
+        <pre>import { requireAuth } from '../../shared/middlewares/auth.middleware.js'
+import { requireRole } from '../../shared/middlewares/roles.middleware.js'
+import { uploadProductImageHandler } from './products.controller.js'
+
+export async function productsRoutes(fastify) {
+
+  <span class="cm">// POST /api/products/:id/upload — solo ADMIN puede subir imágenes</span>
+  fastify.post('/:id/upload', {
+    preHandler: [requireAuth, requireRole('ADMIN')],
+    schema: {
+      tags: ['Products'],
+      summary: 'Subir imagen de producto',
+      consumes: ['multipart/form-data']
+    }
+  }, uploadProductImageHandler)
+}</pre>
+      </div>
+
+      <h3>// 6. cómo enviarlo desde el frontend</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 frontend — subir imagen</span><span class="code-lang">js</span></div>
+        <pre">async function uploadImage(productId, file) {
+  const formData = new FormData()
+  formData.append('file', file)  <span class="cm">// el archivo del input type="file"</span>
+
+  const res = await fetch(`http://localhost:3000/api/products/${productId}/upload`, {
+    method: 'POST',
+    headers: {
+      <span class="cm">// NO pongas Content-Type aquí — el navegador lo pone automáticamente</span>
+      <span class="cm">// con el boundary correcto para multipart/form-data</span>
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
+    },
+    body: formData
+  })
+
+  const { imageUrl } = await res.json()
+  console.log('Imagen subida:', imageUrl)
+  <span class="cm">// imageUrl = "/uploads/550e8400-e29b-41d4-a716-446655440000.jpg"</span>
+  <span class="cm">// accesible en: http://localhost:3000/uploads/550e8400...jpg</span>
 }</pre>
       </div>
 
       <div class="callout danger">
         <span class="callout-icon">🚨</span>
         <div>
-          <div class="callout-title">Nunca uses el nombre original del archivo</div>
-          <p>Un atacante puede enviar un archivo con nombre <code>../../etc/passwd</code> o <code>malware.exe</code>. Siempre genera un nombre nuevo con <code>Date.now()</code> o un UUID.</p>
+          <div class="callout-title">Nunca derives la extensión del nombre original</div>
+          <p>Un atacante puede renombrar un ejecutable como <code>foto.jpg</code> y enviarlo. Siempre usa el <strong>mimetype</strong> para determinar la extensión real — el mimetype lo verifica el servidor, no el cliente.</p>
         </div>
       </div>
+
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <div>
+          <div class="callout-title">En producción usa almacenamiento en la nube</div>
+          <p>Guardar archivos en el disco del servidor funciona en desarrollo pero no escala bien. En producción usa servicios como <strong>AWS S3</strong>, <strong>Cloudinary</strong> o <strong>Supabase Storage</strong> para almacenar los archivos y guardar solo la URL en PostgreSQL.</p>
+        </div>
+      </div>
+
     </div>
 
     <!-- PASO 12: AUTH -->
