@@ -1,6 +1,6 @@
-# ⚡ Fastify API de Ventas — JavaScript Modular
+# ⚡ Fastify API — JavaScript Modular con Capas, Api de ejemplo
 
-API REST de ventas construida con **Fastify 4**, **PostgreSQL** (vía Prisma ORM), **Redis** (caché) y autenticación **JWT**. Arquitectura modular en capas: routes → service → repository. Sin TypeScript, sin clases — JavaScript funcional puro.
+API REST construida con **Fastify 4**, **PostgreSQL** (vía Prisma ORM), **Redis** (caché) y autenticación **JWT**. Arquitectura modular en capas: routes → service → repository. Sin TypeScript, sin clases — JavaScript funcional puro.
 
 ---
 
