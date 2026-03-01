@@ -179,6 +179,12 @@
   <a class="nav-item" href="#paso-10" onclick="setActive(this)"><span class="step-badge">10</span> Módulo (Plugin)</a>
   <a class="nav-item" href="#paso-11" onclick="setActive(this)"><span class="step-badge">11</span> Subida de Archivos</a>
 
+  <div class="nav-section">Módulo Trabajadores</div>
+  <a class="nav-item" href="#paso-24" onclick="setActive(this)"><span class="step-badge">24</span> Workers</a>
+
+  <div class="nav-section">Módulo Productos</div>
+  <a class="nav-item" href="#paso-25" onclick="setActive(this)"><span class="step-badge">25</span> Products</a>
+
   <div class="nav-section">Seguridad</div>
   <a class="nav-item" href="#paso-12" onclick="setActive(this)"><span class="step-badge">12</span> Auth + JWT</a>
   <a class="nav-item" href="#paso-12b" onclick="setActive(this)"><span class="step-badge">12+</span> Auth.js / Better Auth</a>
@@ -193,7 +199,22 @@
   <a class="nav-item" href="#paso-19" onclick="setActive(this)"><span class="step-badge">19</span> Logs</a>
   <a class="nav-item" href="#paso-20" onclick="setActive(this)"><span class="step-badge">20</span> Paginación</a>
   <a class="nav-item" href="#paso-21" onclick="setActive(this)"><span class="step-badge">21</span> Swagger</a>
+  <a class="nav-item" href="#paso-23" onclick="setActive(this)"><span class="step-badge">23</span> Buenas Prácticas</a>
   <a class="nav-item" href="#paso-22" onclick="setActive(this)"><span class="step-badge">22</span> Resumen Final</a>
+
+  <div class="nav-section">Módulo Trabajadores</div>
+  <a class="nav-item" href="#workers-schema" onclick="setActive(this)"><span class="step-badge">W1</span> Schema + Roles</a>
+  <a class="nav-item" href="#workers-repository" onclick="setActive(this)"><span class="step-badge">W2</span> Repository</a>
+  <a class="nav-item" href="#workers-service" onclick="setActive(this)"><span class="step-badge">W3</span> Service</a>
+  <a class="nav-item" href="#workers-controller" onclick="setActive(this)"><span class="step-badge">W4</span> Controller</a>
+  <a class="nav-item" href="#workers-routes" onclick="setActive(this)"><span class="step-badge">W5</span> Routes</a>
+
+  <div class="nav-section">Módulo Productos</div>
+  <a class="nav-item" href="#products-schema" onclick="setActive(this)"><span class="step-badge">P1</span> Schema + Entidades</a>
+  <a class="nav-item" href="#products-repository" onclick="setActive(this)"><span class="step-badge">P2</span> Repository</a>
+  <a class="nav-item" href="#products-service" onclick="setActive(this)"><span class="step-badge">P3</span> Service</a>
+  <a class="nav-item" href="#products-controller" onclick="setActive(this)"><span class="step-badge">P4</span> Controller</a>
+  <a class="nav-item" href="#products-routes" onclick="setActive(this)"><span class="step-badge">P5</span> Routes</a>
 </aside>
 
 <!-- MAIN -->
@@ -1108,43 +1129,144 @@ datasource db {
   url      = env("DATABASE_URL")  <span class="cm">// lee del .env</span>
 }
 
-<span class="cm">// cada model se convierte en una tabla en PostgreSQL</span>
-<span class="cm">// @@map("users") define el nombre real de la tabla en la BD</span>
+<span class="cm">// ─── USUARIOS DEL SISTEMA ───────────────────────────────</span>
 model User {
-  id        String   @id @default(uuid())   <span class="cm">// UUID como primary key</span>
-  name      String
-  email     String   @unique               <span class="cm">// índice único</span>
-  password  String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  sales     Sale[]                          <span class="cm">// relación 1:N con Sale</span>
+  id         String   @id @default(uuid())
+  name       String
+  email      String   @unique
+  password   String
+  role       Role     @default(USER)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  sales      Sale[]
+  workerId   String?  @unique         <span class="cm">// relación opcional con Trabajador</span>
+  worker     Worker?  @relation(fields: [workerId], references: [id])
 
+  @@index([role])
+  @@index([isActive])
   @@map("users")
 }
 
-model Product {
-  id          String     @id @default(uuid())
-  name        String
-  description String?                       <span class="cm">// ? = campo opcional (nullable)</span>
-  price       Decimal    @db.Decimal(10, 2) <span class="cm">// 10 dígitos, 2 decimales</span>
-  stock       Int        @default(0)
-  imageUrl    String?
-  createdAt   DateTime   @default(now())
-  saleItems   SaleItem[]
+<span class="cm">// ─── MÓDULO TRABAJADORES ────────────────────────────────</span>
+model Worker {
+  id           String          @id @default(uuid())
+  firstName    String
+  lastName     String
+  dni          String          @unique   <span class="cm">// documento de identidad único</span>
+  email        String          @unique
+  phone        String?
+  position     String                    <span class="cm">// cargo — un solo cargo por trabajador</span>
+  department   String
+  salary       Decimal         @db.Decimal(10, 2)
+  hireDate     DateTime                  <span class="cm">// fecha de ingreso original</span>
+  status       WorkerStatus    @default(ACTIVE)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  movements    WorkerMovement[]          <span class="cm">// historial de movimientos</span>
+  user         User?                     <span class="cm">// acceso al aplicativo (opcional)</span>
 
+  @@index([status])
+  @@index([department])
+  @@index([dni])
+  @@map("workers")
+}
+
+<span class="cm">// historial de movimientos del personal</span>
+model WorkerMovement {
+  id          String         @id @default(uuid())
+  workerId    String
+  worker      Worker         @relation(fields: [workerId], references: [id])
+  type        MovementType               <span class="cm">// HIRE, RESIGN, REACTIVATE, POSITION_CHANGE</span>
+  description String                     <span class="cm">// detalle del movimiento</span>
+  previousPosition String?               <span class="cm">// cargo anterior si hubo cambio</span>
+  newPosition      String?               <span class="cm">// nuevo cargo si hubo cambio</span>
+  effectiveDate    DateTime              <span class="cm">// fecha efectiva del movimiento</span>
+  createdBy   String                     <span class="cm">// id del usuario que lo registró</span>
+  createdAt   DateTime       @default(now())
+
+  @@index([workerId])
+  @@index([type])
+  @@index([effectiveDate])
+  @@map("worker_movements")
+}
+
+<span class="cm">// ─── MÓDULO PRODUCTOS ───────────────────────────────────</span>
+model Product {
+  id           String         @id @default(uuid())
+  name         String
+  description  String?
+  sku          String         @unique   <span class="cm">// código único del producto</span>
+  price        Decimal        @db.Decimal(10, 2)
+  stock        Int            @default(0)
+  minStock     Int            @default(0)   <span class="cm">// stock mínimo para alertas</span>
+  imageUrl     String?
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  saleItems    SaleItem[]
+  stockMoves   StockMovement[]
+  discounts    Discount[]
+
+  @@index([isActive])
+  @@index([sku])
+  @@index([stock])
   @@map("products")
 }
 
-model Sale {
-  id        String     @id @default(uuid())
-  userId    String
-  user      User       @relation(fields: [userId], references: [id])
-  total     Decimal    @db.Decimal(10, 2)
-  status    SaleStatus @default(PENDING)
-  items     SaleItem[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt          <span class="cm">// se actualiza automáticamente</span>
+<span class="cm">// historial de movimientos de stock</span>
+model StockMovement {
+  id          String            @id @default(uuid())
+  productId   String
+  product     Product           @relation(fields: [productId], references: [id])
+  type        StockMovementType             <span class="cm">// IN, OUT, ADJUST, RETURN</span>
+  quantity    Int                           <span class="cm">// positivo = entrada, negativo = salida</span>
+  previousStock Int                         <span class="cm">// stock antes del movimiento</span>
+  newStock    Int                           <span class="cm">// stock después del movimiento</span>
+  reason      String                        <span class="cm">// motivo del ajuste</span>
+  createdBy   String                        <span class="cm">// id del usuario que lo registró</span>
+  createdAt   DateTime          @default(now())
 
+  @@index([productId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("stock_movements")
+}
+
+<span class="cm">// descuentos de productos</span>
+model Discount {
+  id          String       @id @default(uuid())
+  productId   String
+  product     Product      @relation(fields: [productId], references: [id])
+  name        String                    <span class="cm">// nombre del descuento</span>
+  percentage  Decimal      @db.Decimal(5, 2)  <span class="cm">// 0-100</span>
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean      @default(true)
+  createdBy   String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([productId])
+  @@index([isActive])
+  @@index([startDate, endDate])
+  @@map("discounts")
+}
+
+<span class="cm">// ─── MÓDULO VENTAS ──────────────────────────────────────</span>
+model Sale {
+  id              String     @id @default(uuid())
+  userId          String
+  user            User       @relation(fields: [userId], references: [id])
+  total           Decimal    @db.Decimal(10, 2)
+  status          SaleStatus @default(PENDING)
+  idempotencyKey  String?    @unique
+  items           SaleItem[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
   @@map("sales")
 }
 
@@ -1157,10 +1279,40 @@ model SaleItem {
   quantity  Int
   unitPrice Decimal @db.Decimal(10, 2)
 
+  @@index([saleId])
+  @@index([productId])
   @@map("sale_items")
 }
 
-enum Role       { USER ADMIN }
+<span class="cm">// ─── ENUMS ──────────────────────────────────────────────</span>
+enum Role {
+  USER       <span class="cm">// acceso básico</span>
+  ADMIN      <span class="cm">// acceso total</span>
+  RRHH       <span class="cm">// gestión de trabajadores</span>
+  PRICING    <span class="cm">// gestión de precios y descuentos</span>
+}
+
+enum WorkerStatus {
+  ACTIVE     <span class="cm">// trabajando</span>
+  INACTIVE   <span class="cm">// desactivado manualmente</span>
+  RESIGNED   <span class="cm">// renunció</span>
+}
+
+enum MovementType {
+  HIRE             <span class="cm">// ingreso inicial</span>
+  RESIGN           <span class="cm">// renuncia</span>
+  REACTIVATE       <span class="cm">// reingreso</span>
+  POSITION_CHANGE  <span class="cm">// cambio de cargo</span>
+  DEACTIVATE       <span class="cm">// desactivación manual</span>
+}
+
+enum StockMovementType {
+  IN       <span class="cm">// entrada de stock (compra, reposición)</span>
+  OUT      <span class="cm">// salida de stock (venta manual)</span>
+  ADJUST   <span class="cm">// ajuste manual</span>
+  RETURN   <span class="cm">// devolución</span>
+}
+
 enum SaleStatus { PENDING COMPLETED CANCELLED }</pre>
       </div>
 
@@ -3783,6 +3935,1575 @@ export const swaggerPlugin = fp(async (fastify) => {
       </div>
     </div>
 
+    <!-- PASO 24: MÓDULO TRABAJADORES -->
+    <div class="section" id="paso-24">
+      <div class="section-header">
+        <div class="step-number">24</div>
+        <div>
+          <div class="section-title">Módulo Trabajadores</div>
+          <div class="section-desc">Gestión completa de personal: contratación, renuncia, reingreso, cambio de cargo y acceso al sistema.</div>
+        </div>
+      </div>
+
+      <p>El módulo de trabajadores maneja el ciclo de vida completo del personal. Nunca se elimina un registro — todo cambio queda registrado en el historial de movimientos para mantener trazabilidad.</p>
+
+      <h3>// estructura del módulo</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📁 src/modules/workers/</span><span class="code-lang">bash</span></div>
+        <pre>workers/
+├── workers.module.js
+├── workers.routes.js
+├── workers.controller.js
+├── workers.service.js
+├── workers.repository.js
+└── workers.schema.js</pre>
+      </div>
+
+      <h3>// repository — consultas a la BD</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/workers/workers.repository.js</span><span class="code-lang">js</span></div>
+        <pre>import { prisma } from '../../shared/plugins/prisma.plugin.js'
+
+export async function findAllWorkers({ page = 1, limit = 10, status, department } = {}) {
+  const skip = (page - 1) * limit
+  const where = {}
+  if (status)     where.status = status
+  if (department) where.department = department
+
+  const [data, total] = await Promise.all([
+    prisma.worker.findMany({
+      where,
+      skip,
+      take: limit,
+      include: {
+        user: { select: { id: true, email: true, role: true, isActive: true } },
+        movements: {
+          orderBy: { createdAt: 'desc' },
+          take: 1   <span class="cm">// solo el último movimiento en el listado</span>
+        }
+      },
+      orderBy: { lastName: 'asc' }
+    }),
+    prisma.worker.count({ where })
+  ])
+
+  return { data, total }
+}
+
+export async function findWorkerById(id) {
+  return prisma.worker.findUnique({
+    where: { id },
+    include: {
+      user: { select: { id: true, email: true, role: true, isActive: true } },
+      movements: { orderBy: { createdAt: 'desc' } }  <span class="cm">// historial completo</span>
+    }
+  })
+}
+
+export async function findWorkerByDni(dni) {
+  return prisma.worker.findUnique({ where: { dni } })
+}
+
+export async function createWorker(data) {
+  return prisma.worker.create({
+    data,
+    include: { movements: true }
+  })
+}
+
+export async function updateWorker(id, data) {
+  return prisma.worker.update({
+    where: { id },
+    data,
+    include: { user: { select: { id: true, email: true, role: true } } }
+  })
+}
+
+export async function createMovement(data) {
+  return prisma.workerMovement.create({ data })
+}</pre>
+      </div>
+
+      <h3>// service — reglas de negocio</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/workers/workers.service.js</span><span class="code-lang">js</span></div>
+        <pre>import { prisma } from '../../shared/plugins/prisma.plugin.js'
+import {
+  findAllWorkers, findWorkerById, findWorkerByDni,
+  createWorker, updateWorker, createMovement
+} from './workers.repository.js'
+import { buildPagination } from '../../shared/utils/pagination.js'
+
+export async function getAllWorkers(query) {
+  const { data, total } = await findAllWorkers(query)
+  return buildPagination(data, total, query.page, query.limit)
+}
+
+export async function getWorkerById(id) {
+  const worker = await findWorkerById(id)
+  if (!worker) {
+    const err = new Error('Trabajador no encontrado')
+    err.statusCode = 404
+    throw err
+  }
+  return worker
+}
+
+export async function hireWorker(data, requestUser) {
+  <span class="cm">// regla: el DNI debe ser único</span>
+  const existing = await findWorkerByDni(data.dni)
+  if (existing) {
+    const err = new Error(`Ya existe un trabajador con DNI ${data.dni}`)
+    err.statusCode = 409
+    throw err
+  }
+
+  <span class="cm">// transacción: crear trabajador + registrar movimiento de ingreso</span>
+  return prisma.$transaction(async (tx) => {
+    const worker = await tx.worker.create({
+      data: {
+        firstName:  data.firstName,
+        lastName:   data.lastName,
+        dni:        data.dni,
+        email:      data.email,
+        phone:      data.phone,
+        position:   data.position,
+        department: data.department,
+        salary:     data.salary,
+        hireDate:   new Date(data.hireDate),
+        status:     'ACTIVE'
+      }
+    })
+
+    <span class="cm">// registrar el movimiento de ingreso en el historial</span>
+    await tx.workerMovement.create({
+      data: {
+        workerId:      worker.id,
+        type:          'HIRE',
+        description:   `Ingreso como ${data.position} en ${data.department}`,
+        newPosition:   data.position,
+        effectiveDate: new Date(data.hireDate),
+        createdBy:     requestUser.id
+      }
+    })
+
+    return worker
+  })
+}
+
+export async function updateWorkerInfo(id, data, requestUser) {
+  const worker = await findWorkerById(id)
+  if (!worker) {
+    const err = new Error('Trabajador no encontrado')
+    err.statusCode = 404
+    throw err
+  }
+
+  <span class="cm">// regla: no se puede editar un trabajador inactivo o renunciado</span>
+  if (worker.status !== 'ACTIVE') {
+    const err = new Error('No se puede editar un trabajador inactivo o renunciado')
+    err.statusCode = 409
+    throw err
+  }
+
+  <span class="cm">// regla: DNI y fecha de ingreso NO son editables</span>
+  <span class="cm">// son datos históricos que no deben modificarse</span>
+  const { dni, hireDate, ...editableData } = data
+  if (dni || hireDate) {
+    const err = new Error('El DNI y la fecha de ingreso no son editables')
+    err.statusCode = 400
+    throw err
+  }
+
+  return updateWorker(id, editableData)
+}
+
+export async function changePosition(id, data, requestUser) {
+  const worker = await findWorkerById(id)
+  if (!worker) {
+    const err = new Error('Trabajador no encontrado')
+    err.statusCode = 404
+    throw err
+  }
+
+  if (worker.status !== 'ACTIVE') {
+    const err = new Error('Solo se puede cambiar el cargo de un trabajador activo')
+    err.statusCode = 409
+    throw err
+  }
+
+  <span class="cm">// regla: el nuevo cargo debe ser diferente al actual</span>
+  if (worker.position === data.newPosition) {
+    const err = new Error('El nuevo cargo es igual al cargo actual')
+    err.statusCode = 400
+    throw err
+  }
+
+  <span class="cm">// transacción: actualizar cargo + registrar movimiento</span>
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.worker.update({
+      where: { id },
+      data: { position: data.newPosition }
+    })
+
+    await tx.workerMovement.create({
+      data: {
+        workerId:         id,
+        type:             'POSITION_CHANGE',
+        description:      data.reason || `Cambio de cargo`,
+        previousPosition: worker.position,
+        newPosition:      data.newPosition,
+        effectiveDate:    new Date(data.effectiveDate),
+        createdBy:        requestUser.id
+      }
+    })
+
+    return updated
+  })
+}
+
+export async function resignWorker(id, data, requestUser) {
+  const worker = await findWorkerById(id)
+  if (!worker) {
+    const err = new Error('Trabajador no encontrado')
+    err.statusCode = 404
+    throw err
+  }
+
+  <span class="cm">// regla: solo se puede renunciar si está activo</span>
+  if (worker.status !== 'ACTIVE') {
+    const err = new Error('El trabajador no está activo')
+    err.statusCode = 409
+    throw err
+  }
+
+  <span class="cm">// transacción: cambiar estado + registrar movimiento + desactivar acceso</span>
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.worker.update({
+      where: { id },
+      data: { status: 'RESIGNED' }
+    })
+
+    <span class="cm">// registrar la renuncia en el historial</span>
+    await tx.workerMovement.create({
+      data: {
+        workerId:      id,
+        type:          'RESIGN',
+        description:   data.reason || 'Renuncia voluntaria',
+        effectiveDate: new Date(data.effectiveDate),
+        createdBy:     requestUser.id
+      }
+    })
+
+    <span class="cm">// si tenía acceso al sistema, desactivarlo también</span>
+    if (worker.user) {
+      await tx.user.update({
+        where: { id: worker.user.id },
+        data: { isActive: false }
+      })
+    }
+
+    return updated
+  })
+}
+
+export async function reactivateWorker(id, data, requestUser) {
+  const worker = await findWorkerById(id)
+  if (!worker) {
+    const err = new Error('Trabajador no encontrado')
+    err.statusCode = 404
+    throw err
+  }
+
+  <span class="cm">// regla: solo se puede reactivar si está renunciado o inactivo</span>
+  if (worker.status === 'ACTIVE') {
+    const err = new Error('El trabajador ya está activo')
+    err.statusCode = 409
+    throw err
+  }
+
+  <span class="cm">// transacción: reactivar + registrar reingreso</span>
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.worker.update({
+      where: { id },
+      data: {
+        status:   'ACTIVE',
+        position: data.newPosition || worker.position,
+        salary:   data.newSalary   || worker.salary
+      }
+    })
+
+    await tx.workerMovement.create({
+      data: {
+        workerId:      id,
+        type:          'REACTIVATE',
+        description:   data.reason || 'Reingreso a la empresa',
+        newPosition:   data.newPosition || worker.position,
+        effectiveDate: new Date(data.effectiveDate),
+        createdBy:     requestUser.id
+      }
+    })
+
+    return updated
+  })
+}
+
+export async function toggleWorkerAccess(id, data, requestUser) {
+  const worker = await findWorkerById(id)
+  if (!worker) {
+    const err = new Error('Trabajador no encontrado')
+    err.statusCode = 404
+    throw err
+  }
+
+  <span class="cm">// si ya tiene usuario, activar/desactivar acceso</span>
+  if (worker.user) {
+    return prisma.user.update({
+      where: { id: worker.user.id },
+      data: { isActive: data.isActive, role: data.role || worker.user.role }
+    })
+  }
+
+  <span class="cm">// si no tiene usuario, crear uno nuevo con acceso</span>
+  if (data.isActive) {
+    if (!data.password) {
+      const err = new Error('Se requiere contraseña para crear acceso')
+      err.statusCode = 400
+      throw err
+    }
+
+    const bcrypt = await import('bcryptjs')
+    const hashed = await bcrypt.hash(data.password, 12)
+
+    return prisma.user.create({
+      data: {
+        name:     `${worker.firstName} ${worker.lastName}`,
+        email:    worker.email,
+        password: hashed,
+        role:     data.role || 'USER',
+        workerId: worker.id
+      }
+    })
+  }
+}</pre>
+      </div>
+
+      <h3>// controller</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/workers/workers.controller.js</span><span class="code-lang">js</span></div>
+        <pre>import {
+  getAllWorkers, getWorkerById, hireWorker, updateWorkerInfo,
+  changePosition, resignWorker, reactivateWorker, toggleWorkerAccess
+} from './workers.service.js'
+import {
+  hireWorkerSchema, updateWorkerSchema, changePositionSchema,
+  resignSchema, reactivateSchema, workerAccessSchema, workersQuerySchema
+} from './workers.schema.js'
+
+export async function listWorkersHandler(request, reply) {
+  const query = workersQuerySchema.parse(request.query)
+  const result = await getAllWorkers(query)
+  return reply.send(result)
+}
+
+export async function getWorkerHandler(request, reply) {
+  const worker = await getWorkerById(request.params.id)
+  return reply.send(worker)
+}
+
+export async function hireWorkerHandler(request, reply) {
+  const body = hireWorkerSchema.parse(request.body)
+  request.log.info({ createdBy: request.user.id }, 'Registrando nuevo trabajador')
+  const worker = await hireWorker(body, request.user)
+  request.log.info({ workerId: worker.id, dni: worker.dni }, 'Trabajador registrado')
+  return reply.code(201).send(worker)
+}
+
+export async function updateWorkerHandler(request, reply) {
+  const body = updateWorkerSchema.parse(request.body)
+  const worker = await updateWorkerInfo(request.params.id, body, request.user)
+  return reply.send(worker)
+}
+
+export async function changePositionHandler(request, reply) {
+  const body = changePositionSchema.parse(request.body)
+  request.log.info({ workerId: request.params.id, newPosition: body.newPosition }, 'Cambiando cargo')
+  const worker = await changePosition(request.params.id, body, request.user)
+  return reply.send(worker)
+}
+
+export async function resignWorkerHandler(request, reply) {
+  const body = resignSchema.parse(request.body)
+  request.log.info({ workerId: request.params.id }, 'Registrando renuncia')
+  const worker = await resignWorker(request.params.id, body, request.user)
+  request.log.info({ workerId: request.params.id }, 'Renuncia registrada')
+  return reply.send(worker)
+}
+
+export async function reactivateWorkerHandler(request, reply) {
+  const body = reactivateSchema.parse(request.body)
+  request.log.info({ workerId: request.params.id }, 'Reactivando trabajador')
+  const worker = await reactivateWorker(request.params.id, body, request.user)
+  return reply.send(worker)
+}
+
+export async function workerAccessHandler(request, reply) {
+  const body = workerAccessSchema.parse(request.body)
+  const result = await toggleWorkerAccess(request.params.id, body, request.user)
+  return reply.send(result)
+}</pre>
+      </div>
+
+      <h3>// schemas Zod</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/workers/workers.schema.js</span><span class="code-lang">js</span></div>
+        <pre>import { z } from 'zod'
+
+export const hireWorkerSchema = z.object({
+  firstName:  z.string().min(2),
+  lastName:   z.string().min(2),
+  dni:        z.string().min(6).max(20),
+  email:      z.string().email(),
+  phone:      z.string().optional(),
+  position:   z.string().min(2),
+  department: z.string().min(2),
+  salary:     z.number().positive(),
+  hireDate:   z.string().datetime()
+})
+
+<span class="cm">// solo campos editables — DNI y hireDate NO están aquí</span>
+export const updateWorkerSchema = z.object({
+  firstName:  z.string().min(2).optional(),
+  lastName:   z.string().min(2).optional(),
+  email:      z.string().email().optional(),
+  phone:      z.string().optional(),
+  department: z.string().min(2).optional(),
+  salary:     z.number().positive().optional()
+})
+
+export const changePositionSchema = z.object({
+  newPosition:   z.string().min(2),
+  reason:        z.string().optional(),
+  effectiveDate: z.string().datetime()
+})
+
+export const resignSchema = z.object({
+  reason:        z.string().min(5),
+  effectiveDate: z.string().datetime()
+})
+
+export const reactivateSchema = z.object({
+  reason:        z.string().min(5),
+  effectiveDate: z.string().datetime(),
+  newPosition:   z.string().optional(),
+  newSalary:     z.number().positive().optional()
+})
+
+export const workerAccessSchema = z.object({
+  isActive: z.boolean(),
+  role:     z.enum(['USER', 'ADMIN', 'RRHH', 'PRICING']).optional(),
+  password: z.string().min(8).optional()
+})
+
+export const workersQuerySchema = z.object({
+  page:       z.coerce.number().int().positive().default(1),
+  limit:      z.coerce.number().int().positive().max(100).default(10),
+  status:     z.enum(['ACTIVE', 'INACTIVE', 'RESIGNED']).optional(),
+  department: z.string().optional()
+})</pre>
+      </div>
+
+      <h3>// routes</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/workers/workers.routes.js</span><span class="code-lang">js</span></div>
+        <pre>import { requireAuth } from '../../shared/middlewares/auth.middleware.js'
+import { requireRole } from '../../shared/middlewares/roles.middleware.js'
+import {
+  listWorkersHandler, getWorkerHandler, hireWorkerHandler,
+  updateWorkerHandler, changePositionHandler, resignWorkerHandler,
+  reactivateWorkerHandler, workerAccessHandler
+} from './workers.controller.js'
+
+export async function workersRoutes(fastify) {
+
+  <span class="cm">// GET /api/workers — ADMIN y RRHH pueden listar</span>
+  fastify.get('/', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'RRHH')],
+    schema: { tags: ['Workers'], summary: 'Listar trabajadores' }
+  }, listWorkersHandler)
+
+  <span class="cm">// GET /api/workers/:id — detalle con historial completo</span>
+  fastify.get('/:id', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'RRHH')],
+    schema: { tags: ['Workers'], summary: 'Obtener trabajador por ID' }
+  }, getWorkerHandler)
+
+  <span class="cm">// POST /api/workers — contratar nuevo trabajador</span>
+  fastify.post('/', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'RRHH')],
+    schema: { tags: ['Workers'], summary: 'Contratar trabajador' }
+  }, hireWorkerHandler)
+
+  <span class="cm">// PATCH /api/workers/:id — editar datos básicos</span>
+  fastify.patch('/:id', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'RRHH')],
+    schema: { tags: ['Workers'], summary: 'Editar datos del trabajador' }
+  }, updateWorkerHandler)
+
+  <span class="cm">// POST /api/workers/:id/position — cambiar cargo</span>
+  fastify.post('/:id/position', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'RRHH')],
+    schema: { tags: ['Workers'], summary: 'Cambiar cargo' }
+  }, changePositionHandler)
+
+  <span class="cm">// POST /api/workers/:id/resign — registrar renuncia</span>
+  fastify.post('/:id/resign', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'RRHH')],
+    schema: { tags: ['Workers'], summary: 'Registrar renuncia' }
+  }, resignWorkerHandler)
+
+  <span class="cm">// POST /api/workers/:id/reactivate — reingreso</span>
+  fastify.post('/:id/reactivate', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'RRHH')],
+    schema: { tags: ['Workers'], summary: 'Reactivar trabajador (reingreso)' }
+  }, reactivateWorkerHandler)
+
+  <span class="cm">// PATCH /api/workers/:id/access — gestionar acceso al sistema</span>
+  fastify.patch('/:id/access', {
+    preHandler: [requireAuth, requireRole('ADMIN')],
+    schema: { tags: ['Workers'], summary: 'Gestionar acceso al sistema (solo ADMIN)' }
+  }, workerAccessHandler)
+}</pre>
+      </div>
+
+      <h3>// module</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/workers/workers.module.js</span><span class="code-lang">js</span></div>
+        <pre>import fp from 'fastify-plugin'
+import { workersRoutes } from './workers.routes.js'
+
+export const workersModule = fp(async (fastify) => {
+  fastify.register(workersRoutes)
+})</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/app.js — registrar el módulo</span><span class="code-lang">js</span></div>
+        <pre>import { workersModule } from './modules/workers/workers.module.js'
+
+app.register(workersModule, { prefix: '/api/workers' })</pre>
+      </div>
+
+      <div class="callout info">
+        <span class="callout-icon">🔒</span>
+        <div>
+          <div class="callout-title">Campos no editables por diseño</div>
+          <p>El <code>dni</code> y <code>hireDate</code> no aparecen en el <code>updateWorkerSchema</code> — si el cliente los envía, Zod los ignora. Son datos históricos que identifican al trabajador y nunca deben modificarse.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PASO 25: MÓDULO PRODUCTOS -->
+    <div class="section" id="paso-25">
+      <div class="section-header">
+        <div class="step-number">25</div>
+        <div>
+          <div class="section-title">Módulo Productos</div>
+          <div class="section-desc">Gestión de productos, control de stock con historial de movimientos y descuentos.</div>
+        </div>
+      </div>
+
+      <h3>// estructura del módulo</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📁 src/modules/products/</span><span class="code-lang">bash</span></div>
+        <pre>products/
+├── products.module.js
+├── products.routes.js
+├── products.controller.js
+├── products.service.js
+├── products.repository.js
+└── products.schema.js</pre>
+      </div>
+
+      <h3>// repository</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/products/products.repository.js</span><span class="code-lang">js</span></div>
+        <pre>import { prisma } from '../../shared/plugins/prisma.plugin.js'
+
+export async function findAllProducts({ page = 1, limit = 10, isActive } = {}) {
+  const skip = (page - 1) * limit
+  const where = {}
+  if (isActive !== undefined) where.isActive = isActive
+
+  const [data, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      skip,
+      take: limit,
+      include: {
+        discounts: {
+          where: { isActive: true },  <span class="cm">// solo descuentos activos</span>
+          orderBy: { createdAt: 'desc' }
+        }
+      },
+      orderBy: { name: 'asc' }
+    }),
+    prisma.product.count({ where })
+  ])
+
+  return { data, total }
+}
+
+export async function findProductById(id) {
+  return prisma.product.findUnique({
+    where: { id },
+    include: {
+      discounts:  { orderBy: { createdAt: 'desc' } },
+      stockMoves: { orderBy: { createdAt: 'desc' }, take: 20 }
+    }
+  })
+}
+
+export async function findProductBySku(sku) {
+  return prisma.product.findUnique({ where: { sku } })
+}
+
+export async function createProduct(data) {
+  return prisma.product.create({ data })
+}
+
+export async function updateProduct(id, data) {
+  return prisma.product.update({ where: { id }, data })
+}
+
+export async function createStockMovement(data) {
+  return prisma.stockMovement.create({ data })
+}
+
+export async function createDiscount(data) {
+  return prisma.discount.create({ data })
+}
+
+export async function updateDiscount(id, data) {
+  return prisma.discount.update({ where: { id }, data })
+}
+
+export async function findDiscountById(id) {
+  return prisma.discount.findUnique({
+    where: { id },
+    include: { product: { select: { id: true, name: true } } }
+  })
+}</pre>
+      </div>
+
+      <h3>// service — reglas de negocio</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/products/products.service.js</span><span class="code-lang">js</span></div>
+        <pre>import { prisma } from '../../shared/plugins/prisma.plugin.js'
+import {
+  findAllProducts, findProductById, findProductBySku,
+  createProduct, updateProduct,
+  createStockMovement, createDiscount, updateDiscount, findDiscountById
+} from './products.repository.js'
+import { buildPagination } from '../../shared/utils/pagination.js'
+
+export async function getAllProducts(query) {
+  const { data, total } = await findAllProducts(query)
+  return buildPagination(data, total, query.page, query.limit)
+}
+
+export async function getProductById(id) {
+  const product = await findProductById(id)
+  if (!product) {
+    const err = new Error('Producto no encontrado')
+    err.statusCode = 404
+    throw err
+  }
+  return product
+}
+
+export async function createNewProduct(data, requestUser) {
+  <span class="cm">// regla: el SKU debe ser único</span>
+  const existing = await findProductBySku(data.sku)
+  if (existing) {
+    const err = new Error(`Ya existe un producto con SKU ${data.sku}`)
+    err.statusCode = 409
+    throw err
+  }
+
+  return createProduct(data)
+}
+
+export async function updateProductInfo(id, data, requestUser) {
+  const product = await findProductById(id)
+  if (!product) {
+    const err = new Error('Producto no encontrado')
+    err.statusCode = 404
+    throw err
+  }
+
+  <span class="cm">// regla: el SKU no es editable — identifica al producto</span>
+  if (data.sku) {
+    const err = new Error('El SKU no es editable')
+    err.statusCode = 400
+    throw err
+  }
+
+  return updateProduct(id, data)
+}
+
+export async function deactivateProduct(id, requestUser) {
+  const product = await findProductById(id)
+  if (!product) {
+    const err = new Error('Producto no encontrado')
+    err.statusCode = 404
+    throw err
+  }
+
+  if (!product.isActive) {
+    const err = new Error('El producto ya está desactivado')
+    err.statusCode = 409
+    throw err
+  }
+
+  return updateProduct(id, { isActive: false })
+}
+
+export async function adjustStock(id, data, requestUser) {
+  const product = await findProductById(id)
+  if (!product) {
+    const err = new Error('Producto no encontrado')
+    err.statusCode = 404
+    throw err
+  }
+
+  if (!product.isActive) {
+    const err = new Error('No se puede ajustar stock de un producto desactivado')
+    err.statusCode = 409
+    throw err
+  }
+
+  const newStock = product.stock + data.quantity
+
+  <span class="cm">// regla: el stock nunca puede quedar negativo</span>
+  if (newStock < 0) {
+    const err = new Error(`Stock insuficiente. Disponible: ${product.stock}`)
+    err.statusCode = 409
+    throw err
+  }
+
+  <span class="cm">// transacción: actualizar stock + registrar movimiento</span>
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.product.update({
+      where: { id },
+      data: { stock: newStock }
+    })
+
+    <span class="cm">// siempre guardar el historial del movimiento de stock</span>
+    await tx.stockMovement.create({
+      data: {
+        productId:     id,
+        type:          data.type,       <span class="cm">// IN, OUT, ADJUST, RETURN</span>
+        quantity:      data.quantity,
+        previousStock: product.stock,
+        newStock:      newStock,
+        reason:        data.reason,
+        createdBy:     requestUser.id
+      }
+    })
+
+    return updated
+  })
+}
+
+export async function addDiscount(productId, data, requestUser) {
+  const product = await findProductById(productId)
+  if (!product) {
+    const err = new Error('Producto no encontrado')
+    err.statusCode = 404
+    throw err
+  }
+
+  <span class="cm">// regla: porcentaje entre 1 y 100</span>
+  if (data.percentage <= 0 || data.percentage > 100) {
+    const err = new Error('El porcentaje debe estar entre 1 y 100')
+    err.statusCode = 400
+    throw err
+  }
+
+  <span class="cm">// regla: la fecha de inicio debe ser antes que la de fin</span>
+  if (new Date(data.startDate) >= new Date(data.endDate)) {
+    const err = new Error('La fecha de inicio debe ser anterior a la fecha de fin')
+    err.statusCode = 400
+    throw err
+  }
+
+  return createDiscount({
+    productId,
+    name:       data.name,
+    percentage: data.percentage,
+    startDate:  new Date(data.startDate),
+    endDate:    new Date(data.endDate),
+    createdBy:  requestUser.id
+  })
+}
+
+export async function deactivateDiscount(discountId, requestUser) {
+  const discount = await findDiscountById(discountId)
+  if (!discount) {
+    const err = new Error('Descuento no encontrado')
+    err.statusCode = 404
+    throw err
+  }
+
+  if (!discount.isActive) {
+    const err = new Error('El descuento ya está desactivado')
+    err.statusCode = 409
+    throw err
+  }
+
+  return updateDiscount(discountId, { isActive: false })
+}</pre>
+      </div>
+
+      <h3>// controller</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/products/products.controller.js</span><span class="code-lang">js</span></div>
+        <pre>import {
+  getAllProducts, getProductById, createNewProduct, updateProductInfo,
+  deactivateProduct, adjustStock, addDiscount, deactivateDiscount
+} from './products.service.js'
+import {
+  createProductSchema, updateProductSchema, adjustStockSchema,
+  addDiscountSchema, productsQuerySchema
+} from './products.schema.js'
+
+export async function listProductsHandler(request, reply) {
+  const query = productsQuerySchema.parse(request.query)
+  const result = await getAllProducts(query)
+  return reply.send(result)
+}
+
+export async function getProductHandler(request, reply) {
+  const product = await getProductById(request.params.id)
+  return reply.send(product)
+}
+
+export async function createProductHandler(request, reply) {
+  const body = createProductSchema.parse(request.body)
+  request.log.info({ sku: body.sku, createdBy: request.user.id }, 'Creando producto')
+  const product = await createNewProduct(body, request.user)
+  request.log.info({ productId: product.id, sku: product.sku }, 'Producto creado')
+  return reply.code(201).send(product)
+}
+
+export async function updateProductHandler(request, reply) {
+  const body = updateProductSchema.parse(request.body)
+  const product = await updateProductInfo(request.params.id, body, request.user)
+  return reply.send(product)
+}
+
+export async function deactivateProductHandler(request, reply) {
+  request.log.info({ productId: request.params.id, by: request.user.id }, 'Desactivando producto')
+  const product = await deactivateProduct(request.params.id, request.user)
+  return reply.send(product)
+}
+
+export async function adjustStockHandler(request, reply) {
+  const body = adjustStockSchema.parse(request.body)
+  request.log.info(
+    { productId: request.params.id, quantity: body.quantity, type: body.type, by: request.user.id },
+    'Ajuste de stock'
+  )
+  const product = await adjustStock(request.params.id, body, request.user)
+  return reply.send(product)
+}
+
+export async function addDiscountHandler(request, reply) {
+  const body = addDiscountSchema.parse(request.body)
+  request.log.info({ productId: request.params.id, by: request.user.id }, 'Agregando descuento')
+  const discount = await addDiscount(request.params.id, body, request.user)
+  return reply.code(201).send(discount)
+}
+
+export async function deactivateDiscountHandler(request, reply) {
+  request.log.info({ discountId: request.params.discountId, by: request.user.id }, 'Desactivando descuento')
+  const discount = await deactivateDiscount(request.params.discountId, request.user)
+  return reply.send(discount)
+}</pre>
+      </div>
+
+      <h3>// schemas Zod</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/products/products.schema.js</span><span class="code-lang">js</span></div>
+        <pre>import { z } from 'zod'
+
+export const createProductSchema = z.object({
+  name:        z.string().min(2),
+  description: z.string().optional(),
+  sku:         z.string().min(3).max(50),
+  price:       z.number().positive(),
+  stock:       z.number().int().min(0).default(0),
+  minStock:    z.number().int().min(0).default(0),
+  imageUrl:    z.string().url().optional()
+})
+
+<span class="cm">// SKU no está aquí — no es editable</span>
+export const updateProductSchema = z.object({
+  name:        z.string().min(2).optional(),
+  description: z.string().optional(),
+  price:       z.number().positive().optional(),
+  minStock:    z.number().int().min(0).optional(),
+  imageUrl:    z.string().url().optional()
+})
+
+export const adjustStockSchema = z.object({
+  quantity: z.number().int().refine(n => n !== 0, 'La cantidad no puede ser 0'),
+  type:     z.enum(['IN', 'OUT', 'ADJUST', 'RETURN']),
+  reason:   z.string().min(5, 'El motivo debe tener al menos 5 caracteres')
+})
+
+export const addDiscountSchema = z.object({
+  name:       z.string().min(3),
+  percentage: z.number().positive().max(100),
+  startDate:  z.string().datetime(),
+  endDate:    z.string().datetime()
+})
+
+export const productsQuerySchema = z.object({
+  page:     z.coerce.number().int().positive().default(1),
+  limit:    z.coerce.number().int().positive().max(100).default(10),
+  isActive: z.coerce.boolean().optional()
+})</pre>
+      </div>
+
+      <h3>// routes</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/products/products.routes.js</span><span class="code-lang">js</span></div>
+        <pre>import { requireAuth } from '../../shared/middlewares/auth.middleware.js'
+import { requireRole } from '../../shared/middlewares/roles.middleware.js'
+import {
+  listProductsHandler, getProductHandler, createProductHandler,
+  updateProductHandler, deactivateProductHandler,
+  adjustStockHandler, addDiscountHandler, deactivateDiscountHandler
+} from './products.controller.js'
+
+export async function productsRoutes(fastify) {
+
+  <span class="cm">// GET /api/products — cualquier usuario autenticado puede ver</span>
+  fastify.get('/', {
+    preHandler: [requireAuth],
+    schema: { tags: ['Products'], summary: 'Listar productos' }
+  }, listProductsHandler)
+
+  <span class="cm">// GET /api/products/:id — detalle con descuentos y movimientos de stock</span>
+  fastify.get('/:id', {
+    preHandler: [requireAuth],
+    schema: { tags: ['Products'], summary: 'Obtener producto por ID' }
+  }, getProductHandler)
+
+  <span class="cm">// POST /api/products — solo ADMIN</span>
+  fastify.post('/', {
+    preHandler: [requireAuth, requireRole('ADMIN')],
+    schema: { tags: ['Products'], summary: 'Crear producto' }
+  }, createProductHandler)
+
+  <span class="cm">// PATCH /api/products/:id — solo ADMIN</span>
+  fastify.patch('/:id', {
+    preHandler: [requireAuth, requireRole('ADMIN')],
+    schema: { tags: ['Products'], summary: 'Editar producto' }
+  }, updateProductHandler)
+
+  <span class="cm">// DELETE /api/products/:id — desactiva, no elimina</span>
+  fastify.delete('/:id', {
+    preHandler: [requireAuth, requireRole('ADMIN')],
+    schema: { tags: ['Products'], summary: 'Desactivar producto' }
+  }, deactivateProductHandler)
+
+  <span class="cm">// POST /api/products/:id/stock — ajuste de stock</span>
+  <span class="cm">// solo ADMIN puede hacer ajustes manuales</span>
+  fastify.post('/:id/stock', {
+    preHandler: [requireAuth, requireRole('ADMIN')],
+    schema: { tags: ['Products'], summary: 'Ajustar stock' }
+  }, adjustStockHandler)
+
+  <span class="cm">// POST /api/products/:id/discounts — agregar descuento</span>
+  <span class="cm">// ADMIN y PRICING pueden gestionar descuentos</span>
+  fastify.post('/:id/discounts', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'PRICING')],
+    schema: { tags: ['Products'], summary: 'Agregar descuento' }
+  }, addDiscountHandler)
+
+  <span class="cm">// DELETE /api/products/:id/discounts/:discountId — desactivar descuento</span>
+  fastify.delete('/:id/discounts/:discountId', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'PRICING')],
+    schema: { tags: ['Products'], summary: 'Desactivar descuento' }
+  }, deactivateDiscountHandler)
+}</pre>
+      </div>
+
+      <h3>// module</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/products/products.module.js</span><span class="code-lang">js</span></div>
+        <pre>import fp from 'fastify-plugin'
+import { productsRoutes } from './products.routes.js'
+
+export const productsModule = fp(async (fastify) => {
+  fastify.register(productsRoutes)
+})</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/app.js — registrar el módulo</span><span class="code-lang">js</span></div>
+        <pre>import { productsModule } from './modules/products/products.module.js'
+import { workersModule } from './modules/workers/workers.module.js'
+
+app.register(productsModule, { prefix: '/api/products' })
+app.register(workersModule,  { prefix: '/api/workers' })</pre>
+      </div>
+
+      <div class="callout info">
+        <span class="callout-icon">📦</span>
+        <div>
+          <div class="callout-title">SKU no editable por diseño</div>
+          <p>El <code>sku</code> identifica de forma única al producto en todo el sistema — en facturas, reportes, integraciones con otros sistemas. Si se editara, se rompería esa trazabilidad. Por eso no aparece en <code>updateProductSchema</code>.</p>
+        </div>
+      </div>
+
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <div>
+          <div class="callout-title">Stock mínimo como alerta</div>
+          <p>El campo <code>minStock</code> permite configurar un umbral de alerta. Puedes agregar lógica en el service para notificar cuando <code>stock &lt;= minStock</code> después de un ajuste o una venta.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PASO 23: BUENAS PRÁCTICAS -->
+    <div class="section" id="paso-23">
+      <div class="section-header">
+        <div class="step-number">23</div>
+        <div>
+          <div class="section-title">Buenas Prácticas de Backend</div>
+          <div class="section-desc">Todo lo que necesitas implementar para tener una API robusta, segura y mantenible.</div>
+        </div>
+      </div>
+
+      <p>Una API en producción no es solo que funcione — es que sea segura, predecible, trazable y resistente a fallos. Esta sección consolida las prácticas más importantes organizadas por categoría.</p>
+
+      <!-- ─── 1. CONSISTENCIA DE DATOS ─── -->
+      <h3>// 1. nunca dejar datos inconsistentes — transacciones</h3>
+      <p>Cuando una operación toca múltiples tablas, todas deben completarse o ninguna. Si algo falla en el medio, Prisma revierte todo automáticamente.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.service.js — transacción correcta</span><span class="code-lang">js</span></div>
+        <pre>export async function createSale({ userId, items }) {
+  return prisma.$transaction(async (tx) => {
+    <span class="cm">// todas las operaciones usan tx, no prisma directamente</span>
+    <span class="cm">// si cualquiera falla, todo se revierte</span>
+
+    for (const item of items) {
+      const product = await tx.product.findUnique({ where: { id: item.productId } })
+
+      if (!product) {
+        <span class="cm">// lanzar error dentro de la transacción la cancela automáticamente</span>
+        const err = new Error(`Producto ${item.productId} no existe`)
+        err.statusCode = 404
+        throw err
+      }
+
+      if (product.stock < item.quantity) {
+        const err = new Error(`Stock insuficiente para "${product.name}"`)
+        err.statusCode = 409
+        throw err
+      }
+    }
+
+    const sale = await tx.sale.create({ ... })
+
+    <span class="cm">// esto y lo de arriba son atómicos — si falla aquí, la venta no se crea</span>
+    for (const item of items) {
+      await tx.product.update({
+        where: { id: item.productId },
+        data: { stock: { decrement: item.quantity } }
+      })
+    }
+
+    return sale
+  })
+}
+
+<span class="cm">// ❌ NUNCA mezclar tx con prisma dentro de una transacción</span>
+<span class="cm">// esto NO está dentro de la transacción y no se puede revertir:</span>
+return prisma.$transaction(async (tx) => {
+  await tx.sale.create(...)
+  await prisma.product.update(...)  <span class="cm">// ← MAL, usa tx no prisma</span>
+})</pre>
+      </div>
+
+      <!-- ─── 2. ERRORES TIPADOS ─── -->
+      <h3>// 2. errores tipados con códigos HTTP correctos</h3>
+      <p>Cada error debe tener un tipo claro y un código HTTP correcto. El cliente necesita saber si fue un error suyo (4xx) o del servidor (5xx).</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/shared/errors/error-handler.js</span><span class="code-lang">js</span></div>
+        <pre>export function errorHandler(error, request, reply) {
+  const reqId = request.id
+
+  <span class="cm">// 1. errores de validación Zod — siempre 400</span>
+  if (error.name === 'ZodError') {
+    return reply.code(400).send({
+      statusCode: 400,
+      error: 'Validation Error',
+      message: 'Datos inválidos',
+      details: error.errors.map(e => ({
+        field: e.path.join('.'),
+        message: e.message
+      }))
+    })
+  }
+
+  <span class="cm">// 2. errores de negocio con statusCode — 4xx</span>
+  if (error.statusCode) {
+    return reply.code(error.statusCode).send({
+      statusCode: error.statusCode,
+      error: getErrorName(error.statusCode),
+      message: error.message  <span class="cm">// mensaje descriptivo para el cliente</span>
+    })
+  }
+
+  <span class="cm">// 3. errores de Prisma — mapear a HTTP</span>
+  if (error.code === 'P2002') {
+    return reply.code(409).send({
+      statusCode: 409,
+      error: 'Conflict',
+      message: 'El recurso ya existe'
+    })
+  }
+
+  if (error.code === 'P2025') {
+    return reply.code(404).send({
+      statusCode: 404,
+      error: 'Not Found',
+      message: 'Recurso no encontrado'
+    })
+  }
+
+  <span class="cm">// 4. error inesperado — siempre 500</span>
+  <span class="cm">// NUNCA exponer el stack trace ni detalles internos en producción</span>
+  request.log.error({ reqId, err: error }, 'Error inesperado')
+
+  return reply.code(500).send({
+    statusCode: 500,
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'production'
+      ? 'Error interno del servidor'  <span class="cm">// ← producción: mensaje genérico</span>
+      : error.message                  <span class="cm">// ← desarrollo: mensaje real para debug</span>
+    <span class="cm">// NUNCA incluir error.stack en producción</span>
+  })
+}
+
+function getErrorName(statusCode) {
+  const names = {
+    400: 'Bad Request',
+    401: 'Unauthorized',
+    403: 'Forbidden',
+    404: 'Not Found',
+    409: 'Conflict',
+    422: 'Unprocessable Entity',
+    429: 'Too Many Requests'
+  }
+  return names[statusCode] || 'Error'
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 códigos HTTP correctos por situación</span><span class="code-lang">bash</span></div>
+        <pre>200 OK              → GET exitoso, PATCH exitoso
+201 Created         → POST exitoso (recurso creado)
+204 No Content      → DELETE exitoso (sin body)
+400 Bad Request     → datos inválidos, validación fallida
+401 Unauthorized    → sin token o token inválido
+403 Forbidden       → token válido pero sin permisos
+404 Not Found       → recurso no existe
+409 Conflict        → email duplicado, stock insuficiente
+422 Unprocessable   → datos bien formados pero lógicamente inválidos
+429 Too Many Req.   → rate limit superado
+500 Server Error    → error inesperado del servidor</pre>
+      </div>
+
+      <!-- ─── 3. AUTORIZACIÓN REAL ─── -->
+      <h3>// 3. autorización real — no solo autenticación</h3>
+      <p>Autenticación verifica quién eres. Autorización verifica qué puedes hacer. No basta con tener un token válido — debes verificar que tienes permiso sobre el recurso específico.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.service.js</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// ❌ solo autenticación — cualquier usuario autenticado puede modificar</span>
+export async function updateSaleStatus(id, data, requestUser) {
+  return updateSale(id, data)  <span class="cm">// ← peligroso, sin verificar propiedad</span>
+}
+
+<span class="cm">// ✅ autorización real — verificar propiedad del recurso</span>
+export async function updateSaleStatus(id, data, requestUser) {
+  const sale = await findSaleById(id)
+
+  if (!sale) {
+    const err = new Error('Venta no encontrada')
+    err.statusCode = 404
+    throw err
+  }
+
+  <span class="cm">// verificar que el usuario es dueño O es admin</span>
+  const isOwner = sale.userId === requestUser.id
+  const isAdmin = requestUser.role === 'ADMIN'
+
+  if (!isOwner && !isAdmin) {
+    const err = new Error('No tienes permiso para modificar esta venta')
+    err.statusCode = 403
+    throw err
+  }
+
+  <span class="cm">// verificar estado de negocio</span>
+  if (sale.status === 'COMPLETED') {
+    const err = new Error('No se puede modificar una venta completada')
+    err.statusCode = 409
+    throw err
+  }
+
+  return updateSale(id, data)
+}</pre>
+      </div>
+
+      <!-- ─── 4. ÍNDICES EN BD ─── -->
+      <h3>// 4. índices correctos en la base de datos</h3>
+      <p>Sin índices, cada consulta hace un <em>full table scan</em> — lee toda la tabla para encontrar un registro. Con índices, PostgreSQL salta directamente al dato. Son críticos para el rendimiento en tablas grandes.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 prisma/schema.prisma — índices</span><span class="code-lang">prisma</span></div>
+        <pre>model User {
+  id    String @id @default(uuid())
+  email String @unique   <span class="cm">// @unique crea un índice automáticamente</span>
+  role  Role   @default(USER)
+}
+
+model Sale {
+  id        String   @id @default(uuid())
+  userId    String
+  status    SaleStatus
+  createdAt DateTime @default(now())
+
+  <span class="cm">// @@index crea índices para campos que se consultan frecuentemente</span>
+  @@index([userId])               <span class="cm">// buscar ventas por usuario</span>
+  @@index([status])               <span class="cm">// filtrar por estado</span>
+  @@index([createdAt])            <span class="cm">// ordenar por fecha</span>
+  @@index([userId, status])       <span class="cm">// índice compuesto — ventas de un usuario con estado</span>
+}
+
+model SaleItem {
+  id        String @id @default(uuid())
+  saleId    String
+  productId String
+
+  @@index([saleId])               <span class="cm">// buscar ítems de una venta</span>
+  @@index([productId])            <span class="cm">// buscar ítems por producto</span>
+}
+
+<span class="cm">// regla: crear índices en campos que usas en where, orderBy o join</span>
+<span class="cm">// después de agregar índices: npx prisma migrate dev --name add-indexes</span></pre>
+      </div>
+
+      <!-- ─── 5. N+1 QUERIES ─── -->
+      <h3>// 5. evitar N+1 queries</h3>
+      <p>El problema N+1 ocurre cuando haces 1 query para obtener una lista y luego N queries adicionales para obtener datos relacionados de cada elemento. Prisma lo resuelve con <code>include</code>.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.repository.js</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// ❌ N+1 — 1 query para ventas + N queries para el usuario de cada venta</span>
+const sales = await prisma.sale.findMany()
+for (const sale of sales) {
+  sale.user = await prisma.user.findUnique({ where: { id: sale.userId } })
+  <span class="cm">// si hay 100 ventas → 101 queries al servidor</span>
+}
+
+<span class="cm">// ✅ include — 1 sola query con JOIN optimizado</span>
+const sales = await prisma.sale.findMany({
+  include: {
+    user:  { select: { id: true, name: true, email: true } },
+    items: { include: { product: { select: { id: true, name: true, price: true } } } }
+  }
+})
+<span class="cm">// 1 sola query sin importar cuántas ventas haya</span>
+
+<span class="cm">// ✅ select para no traer datos innecesarios</span>
+<span class="cm">// si solo necesitas el nombre, no traigas price, stock, description, etc.</span>
+const products = await prisma.product.findMany({
+  select: { id: true, name: true }  <span class="cm">// solo lo que necesitas</span>
+})</pre>
+      </div>
+
+      <!-- ─── 6. IDEMPOTENCIA ─── -->
+      <h3>// 6. idempotencia en operaciones críticas</h3>
+      <p>Una operación es idempotente cuando ejecutarla múltiples veces produce el mismo resultado. Es crítico en pagos o creación de recursos donde el cliente puede reintentar por un error de red.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.service.js — idempotencia</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// el cliente envía un idempotencyKey único por operación</span>
+<span class="cm">// si el cliente reintenta con el mismo key, devolvemos la venta ya creada</span>
+export async function createSale({ userId, items, idempotencyKey }) {
+  <span class="cm">// buscar si ya existe una venta con este key</span>
+  if (idempotencyKey) {
+    const existing = await prisma.sale.findFirst({
+      where: { idempotencyKey, userId }
+    })
+    <span class="cm">// si ya existe, devolver la misma venta sin crear otra</span>
+    if (existing) return existing
+  }
+
+  return prisma.$transaction(async (tx) => {
+    <span class="cm">// ... validaciones de stock ...</span>
+
+    const sale = await tx.sale.create({
+      data: {
+        userId,
+        total,
+        idempotencyKey,  <span class="cm">// guardar el key en la venta</span>
+        items: { create: saleItems }
+      }
+    })
+
+    <span class="cm">// ... descuento de stock ...</span>
+    return sale
+  })
+}
+
+<span class="cm">// el schema.prisma necesita el campo y un índice único</span>
+<span class="cm">// model Sale {</span>
+<span class="cm">//   idempotencyKey String?  @unique</span>
+<span class="cm">// }</span></pre>
+      </div>
+
+      <!-- ─── 7. HASH DE CONTRASEÑAS ─── -->
+      <h3>// 7. hash correcto de contraseñas</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/auth/auth.service.js</span><span class="code-lang">js</span></div>
+        <pre>import bcrypt from 'bcryptjs'
+
+<span class="cm">// ✅ siempre hashear con bcrypt — salt rounds 12 para producción</span>
+<span class="cm">// más rounds = más seguro pero más lento (12 es el balance correcto)</span>
+const hashed = await bcrypt.hash(password, 12)
+
+<span class="cm">// ✅ compare en tiempo constante — previene timing attacks</span>
+<span class="cm">// un atacante podría medir el tiempo de respuesta para adivinar contraseñas</span>
+<span class="cm">// bcrypt.compare siempre tarda lo mismo sin importar si es correcto o no</span>
+const valid = user && await bcrypt.compare(password, user.password)
+if (!valid) {
+  <span class="cm">// mismo mensaje para usuario inexistente o contraseña incorrecta</span>
+  <span class="cm">// no le digas al atacante cuál de los dos falló</span>
+  const err = new Error('Credenciales inválidas')
+  err.statusCode = 401
+  throw err
+}
+
+<span class="cm">// ❌ NUNCA</span>
+const hashed = md5(password)          <span class="cm">// MD5 no es seguro para contraseñas</span>
+const hashed = sha256(password)       <span class="cm">// SHA tampoco — demasiado rápido</span>
+const hashed = password               <span class="cm">// texto plano — catastrófico</span></pre>
+      </div>
+
+      <!-- ─── 8. TOKENS ─── -->
+      <h3>// 8. manejo correcto de tokens JWT</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 manejo de tokens</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// ✅ JWT_SECRET debe ser largo y aleatorio — mínimo 32 caracteres</span>
+JWT_SECRET=k9#mP2$xQr8vL5nW3jZ6bY1cU4hD7fA0s  <span class="cm">// en .env</span>
+
+<span class="cm">// ✅ tiempo de expiración razonable</span>
+JWT_EXPIRES_IN=7d    <span class="cm">// 7 días para web</span>
+JWT_EXPIRES_IN=24h   <span class="cm">// 24 horas para mayor seguridad</span>
+JWT_EXPIRES_IN=15m   <span class="cm">// 15 min con refresh token para apps críticas</span>
+
+<span class="cm">// ✅ el token solo guarda lo necesario — sin datos sensibles</span>
+fastify.jwt.sign({
+  id:    user.id,
+  email: user.email,
+  role:  user.role
+  <span class="cm">// NUNCA incluir: password, tokens de terceros, datos bancarios</span>
+})
+
+<span class="cm">// ✅ verificar el token en requireAuth antes de cualquier operación</span>
+export async function requireAuth(request, reply) {
+  try {
+    await request.jwtVerify()
+    <span class="cm">// si el token expiró → jwtVerify lanza error → 401</span>
+  } catch {
+    reply.code(401).send({ statusCode: 401, message: 'Token inválido o expirado' })
+  }
+}
+
+<span class="cm">// ❌ NUNCA</span>
+<span class="cm">// exponer el JWT_SECRET en logs o respuestas</span>
+<span class="cm">// guardar tokens en la BD sin cifrar</span>
+<span class="cm">// confiar en el payload del token sin verificar la firma</span></pre>
+      </div>
+
+      <!-- ─── 9. SANITIZACIÓN ─── -->
+      <h3>// 9. sanitización de entrada</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/shared/utils/sanitize.js</span><span class="code-lang">js</span></div>
+        <pre>export function sanitizeQuery(query) {
+  const result = {}
+  for (const [key, value] of Object.entries(query)) {
+    if (typeof value === 'string') {
+      result[key] = value
+        .replace(/[<>'"`;\\]/g, '')  <span class="cm">// eliminar caracteres peligrosos</span>
+        .trim()                        <span class="cm">// eliminar espacios sobrantes</span>
+        .slice(0, 200)                 <span class="cm">// limitar longitud máxima</span>
+    } else {
+      result[key] = value
+    }
+  }
+  return result
+}
+
+<span class="cm">// ✅ siempre sanitizar query params antes de Zod</span>
+const query = getSalesQuerySchema.parse(sanitizeQuery(request.query))
+
+<span class="cm">// el body ya está protegido por Zod — solo acepta los campos definidos</span>
+<span class="cm">// cualquier campo extra en el body es ignorado automáticamente por Zod</span>
+<span class="cm">// { items: [...], malicious: "DROP TABLE" } → malicious es ignorado</span></pre>
+      </div>
+
+      <!-- ─── 10. LOGS Y TRAZABILIDAD ─── -->
+      <h3>// 10. logs de operaciones importantes y trazabilidad</h3>
+      <p>Cuando algo falla en producción, los logs son tu única herramienta para entender qué pasó. Cada petición tiene un <code>reqId</code> único que conecta todos los logs de esa petición.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.controller.js — logs correctos</span><span class="code-lang">js</span></div>
+        <pre>export async function createSaleHandler(request, reply) {
+  const body = createSaleSchema.parse(request.body)
+
+  <span class="cm">// log de inicio — quién hace qué</span>
+  request.log.info(
+    { userId: request.user.id, itemCount: body.items.length },
+    'Iniciando creación de venta'
+  )
+
+  const sale = await createSale({ userId: request.user.id, items: body.items })
+
+  <span class="cm">// log de éxito — qué se creó</span>
+  request.log.info(
+    { userId: request.user.id, saleId: sale.id, total: sale.total },
+    'Venta creada exitosamente'
+  )
+
+  return reply.code(201).send(sale)
+}
+
+<span class="cm">// los logs automáticamente incluyen reqId — trazabilidad entre capas</span>
+<span class="cm">// en producción todos los logs de una petición comparten el mismo reqId:</span>
+<span class="cm">// { "reqId": "req-1", "msg": "Iniciando creación de venta", "userId": "abc" }</span>
+<span class="cm">// { "reqId": "req-1", "msg": "Venta creada exitosamente", "saleId": "xyz" }</span>
+<span class="cm">// { "reqId": "req-1", "msg": "Error inesperado", "err": { ... } }</span></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 qué loguear y con qué nivel</span><span class="code-lang">js</span></div>
+        <pre>request.log.info(...)   <span class="cm">// operaciones exitosas importantes</span>
+request.log.warn(...)   <span class="cm">// situaciones inusuales pero no errores</span>
+request.log.error(...)  <span class="cm">// errores inesperados que necesitan atención</span>
+
+<span class="cm">// ✅ loguear siempre</span>
+<span class="cm">// login exitoso y fallido (con IP pero sin password)</span>
+<span class="cm">// creación de recursos importantes</span>
+<span class="cm">// errores 500 con contexto completo</span>
+<span class="cm">// operaciones administrativas</span>
+
+<span class="cm">// ❌ NUNCA loguear</span>
+<span class="cm">// passwords, tokens JWT, tarjetas de crédito</span>
+<span class="cm">// datos personales sensibles</span>
+<span class="cm">// stack traces completos en producción</span></pre>
+      </div>
+
+      <!-- ─── 11. NO EXPONER STACK TRACES ─── -->
+      <h3>// 11. no exponer stack traces en producción</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/shared/errors/error-handler.js</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// ❌ exponer stack trace — da información valiosa a atacantes</span>
+return reply.code(500).send({
+  message: error.message,
+  stack: error.stack   <span class="cm">// ← NUNCA en producción</span>
+})
+
+<span class="cm">// ✅ mensaje genérico en producción, detalle en desarrollo</span>
+return reply.code(500).send({
+  statusCode: 500,
+  error: 'Internal Server Error',
+  message: process.env.NODE_ENV === 'production'
+    ? 'Error interno del servidor'
+    : error.message
+})
+
+<span class="cm">// el stack trace va a los LOGS del servidor, no al cliente</span>
+request.log.error({ err: error, reqId: request.id }, 'Error inesperado')</pre>
+      </div>
+
+      <!-- ─── 12. PAGINACIÓN OBLIGATORIA ─── -->
+      <h3>// 12. paginación obligatoria en listas</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/sales/sales.repository.js</span><span class="code-lang">js</span></div>
+        <pre><span class="cm">// ❌ sin paginación — puede devolver millones de registros</span>
+return prisma.sale.findMany()
+
+<span class="cm">// ✅ siempre paginar con límite máximo</span>
+export async function findAllSales({ page = 1, limit = 10 } = {}) {
+  const skip = (page - 1) * limit
+
+  const [data, total] = await Promise.all([
+    prisma.sale.findMany({ skip, take: limit, orderBy: { createdAt: 'desc' } }),
+    prisma.sale.count()
+  ])
+
+  return { data, total }
+}
+
+<span class="cm">// en el schema Zod limitar el máximo de items por página</span>
+limit: z.coerce.number().int().positive().max(100).default(10)
+<span class="cm">// así nadie puede pedir 10000 registros de una vez</span></pre>
+      </div>
+
+      <!-- ─── RESUMEN CHECKLIST ─── -->
+      <h3>// checklist completo</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 antes de pasar a producción</span><span class="code-lang">bash</span></div>
+        <pre>DATOS
+  ✅ transacciones en operaciones multi-tabla (usando tx, no prisma)
+  ✅ índices en campos usados en where, orderBy y join
+  ✅ paginación en todos los endpoints de listado
+  ✅ select/include para no traer datos innecesarios
+  ✅ idempotencyKey en operaciones críticas como pagos
+
+SEGURIDAD
+  ✅ bcrypt con salt rounds 12 para contraseñas
+  ✅ JWT_SECRET largo y aleatorio en .env
+  ✅ requireAuth en todas las rutas protegidas
+  ✅ verificación de propiedad del recurso en el service
+  ✅ requireRole para endpoints administrativos
+  ✅ rate limiting global y estricto en login
+  ✅ CORS con orígenes explícitos en producción
+  ✅ sanitización de query params
+  ✅ Zod validando body en todos los POST/PATCH
+
+ERRORES
+  ✅ errorHandler global registrado en app.js
+  ✅ códigos HTTP correctos por situación
+  ✅ mensajes claros sin detalles internos en producción
+  ✅ stack traces solo en logs, nunca en respuesta al cliente
+  ✅ errores de Prisma mapeados a HTTP legibles
+
+OBSERVABILIDAD
+  ✅ logs de operaciones importantes con contexto
+  ✅ reqId en todos los logs para trazabilidad
+  ✅ nunca loguear passwords ni tokens
+  ✅ nivel de log correcto (info, warn, error)</pre>
+      </div>
+
+    </div>
+
     <!-- PASO 22: RESUMEN -->
     <div class="section" id="paso-22">
       <div class="section-header">
@@ -3841,7 +5562,1422 @@ export const swaggerPlugin = fp(async (fastify) => {
 
     </div>
 
+    </div>
+
   </div><!-- /content -->
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- MÓDULO TRABAJADORES                                  -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="content" id="workers-module">
+
+    <!-- W1: SCHEMA + ROLES -->
+    <div class="section" id="workers-schema">
+      <div class="section-header">
+        <div class="step-number">W1</div>
+        <div>
+          <div class="section-title">Módulo Trabajadores — Schema + Roles</div>
+          <div class="section-desc">Entidades, roles extendidos, historial de movimientos y acceso al sistema.</div>
+        </div>
+      </div>
+
+      <p>El módulo de trabajadores maneja el ciclo de vida completo del personal: ingreso, cambio de cargo, renuncia y reingreso. Cada movimiento queda registrado en un historial. Además, un trabajador puede o no tener acceso al aplicativo como usuario del sistema.</p>
+
+      <h3>// 1. roles extendidos en Prisma</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 prisma/schema.prisma — roles actualizados</span><span class="code-lang">prisma</span></div>
+        <pre>enum Role {
+  USER      <span class="cm">// acceso básico al aplicativo</span>
+  ADMIN     <span class="cm">// acceso total</span>
+  RRHH      <span class="cm">// gestión de trabajadores y movimientos</span>
+  PRICING   <span class="cm">// gestión de precios y descuentos</span>
+}</pre>
+      </div>
+
+      <h3>// 2. entidades del módulo</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 prisma/schema.prisma — trabajadores</span><span class="code-lang">prisma</span></div>
+        <pre><span class="cm">// Entity: Worker — representa un trabajador real</span>
+model Worker {
+  id          String        @id @default(uuid())
+  firstName   String
+  lastName    String
+  email       String        @unique
+  phone       String?
+  dni         String        @unique        <span class="cm">// documento de identidad — nunca cambia</span>
+  position    String                       <span class="cm">// cargo actual</span>
+  department  String
+  salary      Decimal       @db.Decimal(10, 2)
+  startDate   DateTime                     <span class="cm">// fecha de ingreso original</span>
+  status      WorkerStatus  @default(ACTIVE)
+
+  <span class="cm">// acceso al aplicativo — un trabajador puede o no ser usuario</span>
+  userId      String?       @unique        <span class="cm">// null = sin acceso al sistema</span>
+  user        User?         @relation(fields: [userId], references: [id])
+
+  movements   WorkerMovement[]             <span class="cm">// historial de movimientos</span>
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status])
+  @@index([department])
+  @@index([dni])
+  @@map("workers")
+}
+
+<span class="cm">// Entity: WorkerMovement — historial inmutable de cada evento del trabajador</span>
+model WorkerMovement {
+  id          String        @id @default(uuid())
+  workerId    String
+  worker      Worker        @relation(fields: [workerId], references: [id])
+  type        MovementType                 <span class="cm">// tipo de movimiento</span>
+  description String                       <span class="cm">// detalle del movimiento</span>
+  previousPosition String?                 <span class="cm">// cargo anterior si hubo cambio</span>
+  newPosition      String?                 <span class="cm">// cargo nuevo si hubo cambio</span>
+  previousSalary   Decimal? @db.Decimal(10, 2)
+  newSalary        Decimal? @db.Decimal(10, 2)
+  effectiveDate    DateTime                <span class="cm">// cuándo aplicó el movimiento</span>
+  createdBy   String                       <span class="cm">// userId de quien registró el movimiento</span>
+  createdAt   DateTime      @default(now())
+
+  @@index([workerId])
+  @@index([type])
+  @@map("worker_movements")
+}
+
+enum WorkerStatus {
+  ACTIVE      <span class="cm">// trabajando actualmente</span>
+  INACTIVE    <span class="cm">// dado de baja temporalmente</span>
+  RESIGNED    <span class="cm">// renunció</span>
+  TERMINATED  <span class="cm">// despedido</span>
+}
+
+enum MovementType {
+  HIRE              <span class="cm">// ingreso inicial</span>
+  POSITION_CHANGE   <span class="cm">// cambio de cargo</span>
+  SALARY_CHANGE     <span class="cm">// cambio de salario</span>
+  DEPARTMENT_CHANGE <span class="cm">// cambio de departamento</span>
+  RESIGNATION       <span class="cm">// renuncia</span>
+  TERMINATION       <span class="cm">// despido</span>
+  REENTRY           <span class="cm">// reingreso</span>
+  DEACTIVATE        <span class="cm">// desactivación temporal</span>
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">💻 terminal</span><span class="code-lang">bash</span></div>
+        <pre>npx prisma migrate dev --name add-workers-module
+npx prisma generate</pre>
+      </div>
+
+      <h3>// 3. schemas de validación Zod</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/workers/workers.schema.js</span><span class="code-lang">js</span></div>
+        <pre>import { z } from 'zod'
+
+<span class="cm">// DTO: crear trabajador</span>
+export const createWorkerSchema = z.object({
+  firstName:  z.string().min(2).max(100),
+  lastName:   z.string().min(2).max(100),
+  email:      z.string().email('Email inválido'),
+  phone:      z.string().optional(),
+  dni:        z.string().min(5).max(20),
+  position:   z.string().min(2).max(100),
+  department: z.string().min(2).max(100),
+  salary:     z.number().positive('El salario debe ser mayor a 0'),
+  startDate:  z.coerce.date(),
+  <span class="cm">// opcional: asignar acceso al sistema al crear</span>
+  createUser: z.boolean().default(false),
+  role:       z.enum(['USER', 'RRHH', 'PRICING']).optional()
+})
+
+<span class="cm">// DTO: editar datos editables — dni y startDate nunca se editan</span>
+export const updateWorkerSchema = z.object({
+  firstName:  z.string().min(2).max(100).optional(),
+  lastName:   z.string().min(2).max(100).optional(),
+  email:      z.string().email().optional(),
+  phone:      z.string().optional(),
+  department: z.string().optional()
+  <span class="cm">// position y salary se cambian solo con movimientos formales</span>
+  <span class="cm">// dni y startDate son inmutables — no están en este schema</span>
+})
+
+<span class="cm">// DTO: cambio de cargo — requiere descripción para el historial</span>
+export const positionChangeSchema = z.object({
+  position:      z.string().min(2).max(100),
+  department:    z.string().optional(),
+  description:   z.string().min(10, 'Describe el motivo del cambio'),
+  effectiveDate: z.coerce.date()
+})
+
+<span class="cm">// DTO: cambio de salario</span>
+export const salaryChangeSchema = z.object({
+  salary:        z.number().positive(),
+  description:   z.string().min(10, 'Describe el motivo del cambio'),
+  effectiveDate: z.coerce.date()
+})
+
+<span class="cm">// DTO: renuncia o despido</span>
+export const exitSchema = z.object({
+  type:          z.enum(['RESIGNATION', 'TERMINATION']),
+  description:   z.string().min(10, 'Describe el motivo de la salida'),
+  effectiveDate: z.coerce.date()
+})
+
+<span class="cm">// DTO: reingreso</span>
+export const reentrySchema = z.object({
+  position:      z.string().min(2).max(100),
+  department:    z.string().min(2).max(100),
+  salary:        z.number().positive(),
+  description:   z.string().min(10, 'Describe el motivo del reingreso'),
+  effectiveDate: z.coerce.date()
+})
+
+<span class="cm">// DTO: gestionar acceso al sistema</span>
+export const systemAccessSchema = z.object({
+  grantAccess: z.boolean(),
+  role:        z.enum(['USER', 'RRHH', 'PRICING']).optional()
+})
+
+<span class="cm">// DTO: query params para listado</span>
+export const getWorkersQuerySchema = z.object({
+  page:       z.coerce.number().int().positive().default(1),
+  limit:      z.coerce.number().int().positive().max(100).default(10),
+  status:     z.enum(['ACTIVE', 'INACTIVE', 'RESIGNED', 'TERMINATED']).optional(),
+  department: z.string().optional(),
+  search:     z.string().optional()  <span class="cm">// buscar por nombre o dni</span>
+})</pre>
+      </div>
+    </div>
+
+    <!-- W2: REPOSITORY -->
+    <div class="section" id="workers-repository">
+      <div class="section-header">
+        <div class="step-number">W2</div>
+        <div>
+          <div class="section-title">Módulo Trabajadores — Repository</div>
+          <div class="section-desc">Consultas a la base de datos. Sin lógica de negocio.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/workers/workers.repository.js</span><span class="code-lang">js</span></div>
+        <pre>import { prisma } from '../../shared/plugins/prisma.plugin.js'
+
+export async function findAllWorkers({ page = 1, limit = 10, status, department, search } = {}) {
+  const skip = (page - 1) * limit
+  const where = {}
+
+  if (status)     where.status = status
+  if (department) where.department = department
+
+  <span class="cm">// búsqueda por nombre o DNI</span>
+  if (search) {
+    where.OR = [
+      { firstName: { contains: search, mode: 'insensitive' } },
+      { lastName:  { contains: search, mode: 'insensitive' } },
+      { dni:       { contains: search } }
+    ]
+  }
+
+  const [data, total] = await Promise.all([
+    prisma.worker.findMany({
+      where,
+      skip,
+      take: limit,
+      select: {
+        id: true, firstName: true, lastName: true,
+        email: true, dni: true, position: true,
+        department: true, status: true, startDate: true,
+        <span class="cm">// incluir si tiene acceso al sistema</span>
+        user: { select: { id: true, role: true } }
+      },
+      orderBy: { lastName: 'asc' }
+    }),
+    prisma.worker.count({ where })
+  ])
+
+  return { data, total }
+}
+
+export async function findWorkerById(id) {
+  return prisma.worker.findUnique({
+    where: { id },
+    include: {
+      user:      { select: { id: true, email: true, role: true } },
+      movements: { orderBy: { createdAt: 'desc' } }
+    }
+  })
+}
+
+export async function findWorkerByDni(dni) {
+  return prisma.worker.findUnique({ where: { dni } })
+}
+
+export async function findWorkerByEmail(email) {
+  return prisma.worker.findUnique({ where: { email } })
+}
+
+export async function createWorker(data) {
+  return prisma.worker.create({ data })
+}
+
+export async function updateWorker(id, data) {
+  return prisma.worker.update({ where: { id }, data })
+}
+
+export async function createMovement(data) {
+  return prisma.workerMovement.create({ data })
+}
+
+export async function findMovementsByWorker(workerId) {
+  return prisma.workerMovement.findMany({
+    where: { workerId },
+    orderBy: { effectiveDate: 'desc' }
+  })
+}</pre>
+      </div>
+    </div>
+
+    <!-- W3: SERVICE -->
+    <div class="section" id="workers-service">
+      <div class="section-header">
+        <div class="step-number">W3</div>
+        <div>
+          <div class="section-title">Módulo Trabajadores — Service</div>
+          <div class="section-desc">Reglas de negocio, movimientos, historial y gestión de acceso al sistema.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/workers/workers.service.js</span><span class="code-lang">js</span></div>
+        <pre>import { prisma } from '../../shared/plugins/prisma.plugin.js'
+import bcrypt from 'bcryptjs'
+import {
+  findAllWorkers, findWorkerById, findWorkerByDni,
+  findWorkerByEmail, createWorker, updateWorker,
+  createMovement
+} from './workers.repository.js'
+import { buildPagination } from '../../shared/utils/pagination.js'
+
+export async function getAllWorkers(query) {
+  const { data, total } = await findAllWorkers(query)
+  return buildPagination(data, total, query.page, query.limit)
+}
+
+export async function getWorkerById(id) {
+  const worker = await findWorkerById(id)
+  if (!worker) {
+    const err = new Error('Trabajador no encontrado')
+    err.statusCode = 404
+    throw err
+  }
+  return worker
+}
+
+export async function createNewWorker(data, requestUser) {
+  <span class="cm">// regla: DNI debe ser único</span>
+  const existingDni = await findWorkerByDni(data.dni)
+  if (existingDni) {
+    const err = new Error('Ya existe un trabajador con ese DNI')
+    err.statusCode = 409
+    throw err
+  }
+
+  <span class="cm">// regla: email debe ser único</span>
+  const existingEmail = await findWorkerByEmail(data.email)
+  if (existingEmail) {
+    const err = new Error('Ya existe un trabajador con ese email')
+    err.statusCode = 409
+    throw err
+  }
+
+  return prisma.$transaction(async (tx) => {
+    <span class="cm">// crear el trabajador</span>
+    const { createUser, role, ...workerData } = data
+    const worker = await tx.worker.create({ data: workerData })
+
+    <span class="cm">// registrar movimiento HIRE en el historial</span>
+    await tx.workerMovement.create({
+      data: {
+        workerId:      worker.id,
+        type:          'HIRE',
+        description:   'Ingreso inicial al sistema',
+        newPosition:   worker.position,
+        newSalary:     worker.salary,
+        effectiveDate: worker.startDate,
+        createdBy:     requestUser.id
+      }
+    })
+
+    <span class="cm">// opcional: crear usuario del sistema al mismo tiempo</span>
+    if (createUser && role) {
+      const tempPassword = await bcrypt.hash('Cambiar123!', 12)
+      const user = await tx.user.create({
+        data: {
+          name:     `${worker.firstName} ${worker.lastName}`,
+          email:    worker.email,
+          password: tempPassword,
+          role
+        }
+      })
+      await tx.worker.update({
+        where: { id: worker.id },
+        data:  { userId: user.id }
+      })
+    }
+
+    return findWorkerById(worker.id)
+  })
+}
+
+export async function editWorker(id, data, requestUser) {
+  const worker = await getWorkerById(id)
+
+  <span class="cm">// regla: solo trabajadores activos se pueden editar</span>
+  if (worker.status !== 'ACTIVE') {
+    const err = new Error('Solo se pueden editar trabajadores activos')
+    err.statusCode = 409
+    throw err
+  }
+
+  <span class="cm">// regla: email único si cambia</span>
+  if (data.email && data.email !== worker.email) {
+    const existing = await findWorkerByEmail(data.email)
+    if (existing) {
+      const err = new Error('Ya existe un trabajador con ese email')
+      err.statusCode = 409
+      throw err
+    }
+  }
+
+  <span class="cm">// dni y startDate son inmutables — nunca se tocan aquí</span>
+  return updateWorker(id, data)
+}
+
+export async function changePosition(id, data, requestUser) {
+  const worker = await getWorkerById(id)
+
+  <span class="cm">// regla: solo activos pueden cambiar de cargo</span>
+  if (worker.status !== 'ACTIVE') {
+    const err = new Error('Solo se puede cambiar el cargo de un trabajador activo')
+    err.statusCode = 409
+    throw err
+  }
+
+  return prisma.$transaction(async (tx) => {
+    <span class="cm">// registrar movimiento antes de actualizar</span>
+    await tx.workerMovement.create({
+      data: {
+        workerId:         id,
+        type:             'POSITION_CHANGE',
+        description:      data.description,
+        previousPosition: worker.position,
+        newPosition:      data.position,
+        effectiveDate:    data.effectiveDate,
+        createdBy:        requestUser.id
+      }
+    })
+
+    <span class="cm">// actualizar el cargo actual</span>
+    return tx.worker.update({
+      where: { id },
+      data: {
+        position:   data.position,
+        department: data.department ?? worker.department
+      }
+    })
+  })
+}
+
+export async function changeSalary(id, data, requestUser) {
+  const worker = await getWorkerById(id)
+
+  if (worker.status !== 'ACTIVE') {
+    const err = new Error('Solo se puede cambiar el salario de un trabajador activo')
+    err.statusCode = 409
+    throw err
+  }
+
+  return prisma.$transaction(async (tx) => {
+    await tx.workerMovement.create({
+      data: {
+        workerId:       id,
+        type:           'SALARY_CHANGE',
+        description:    data.description,
+        previousSalary: worker.salary,
+        newSalary:      data.salary,
+        effectiveDate:  data.effectiveDate,
+        createdBy:      requestUser.id
+      }
+    })
+
+    return tx.worker.update({ where: { id }, data: { salary: data.salary } })
+  })
+}
+
+export async function exitWorker(id, data, requestUser) {
+  const worker = await getWorkerById(id)
+
+  <span class="cm">// regla: no se puede dar de baja a alguien que ya salió</span>
+  if (['RESIGNED', 'TERMINATED'].includes(worker.status)) {
+    const err = new Error('El trabajador ya no está activo en la empresa')
+    err.statusCode = 409
+    throw err
+  }
+
+  const newStatus = data.type === 'RESIGNATION' ? 'RESIGNED' : 'TERMINATED'
+
+  return prisma.$transaction(async (tx) => {
+    <span class="cm">// registrar el movimiento de salida</span>
+    await tx.workerMovement.create({
+      data: {
+        workerId:      id,
+        type:          data.type,
+        description:   data.description,
+        effectiveDate: data.effectiveDate,
+        createdBy:     requestUser.id
+      }
+    })
+
+    <span class="cm">// cambiar estado — nunca eliminar el registro</span>
+    await tx.worker.update({ where: { id }, data: { status: newStatus } })
+
+    <span class="cm">// revocar acceso al sistema si tenía</span>
+    if (worker.userId) {
+      await tx.user.update({
+        where: { id: worker.userId },
+        data:  { role: 'USER' }  <span class="cm">// degradar rol pero no eliminar</span>
+      })
+    }
+
+    return findWorkerById(id)
+  })
+}
+
+export async function reentryWorker(id, data, requestUser) {
+  const worker = await getWorkerById(id)
+
+  <span class="cm">// regla: solo se puede reingresar a alguien que salió</span>
+  if (!['RESIGNED', 'TERMINATED'].includes(worker.status)) {
+    const err = new Error('Solo se puede reingresar a un trabajador que haya salido')
+    err.statusCode = 409
+    throw err
+  }
+
+  return prisma.$transaction(async (tx) => {
+    <span class="cm">// registrar reingreso en historial</span>
+    await tx.workerMovement.create({
+      data: {
+        workerId:      id,
+        type:          'REENTRY',
+        description:   data.description,
+        newPosition:   data.position,
+        newSalary:     data.salary,
+        effectiveDate: data.effectiveDate,
+        createdBy:     requestUser.id
+      }
+    })
+
+    <span class="cm">// reactivar el trabajador con los nuevos datos</span>
+    return tx.worker.update({
+      where: { id },
+      data: {
+        status:     'ACTIVE',
+        position:   data.position,
+        department: data.department,
+        salary:     data.salary
+      }
+    })
+  })
+}
+
+export async function manageSystemAccess(id, data, requestUser) {
+  const worker = await getWorkerById(id)
+
+  return prisma.$transaction(async (tx) => {
+    if (data.grantAccess) {
+      <span class="cm">// regla: solo a trabajadores activos se les da acceso</span>
+      if (worker.status !== 'ACTIVE') {
+        const err = new Error('Solo trabajadores activos pueden tener acceso al sistema')
+        err.statusCode = 409
+        throw err
+      }
+
+      if (worker.userId) {
+        <span class="cm">// ya tiene acceso — solo actualizar rol</span>
+        await tx.user.update({
+          where: { id: worker.userId },
+          data:  { role: data.role ?? 'USER' }
+        })
+      } else {
+        <span class="cm">// crear usuario nuevo con contraseña temporal</span>
+        const tempPassword = await bcrypt.hash('Cambiar123!', 12)
+        const user = await tx.user.create({
+          data: {
+            name:     `${worker.firstName} ${worker.lastName}`,
+            email:    worker.email,
+            password: tempPassword,
+            role:     data.role ?? 'USER'
+          }
+        })
+        await tx.worker.update({ where: { id }, data: { userId: user.id } })
+      }
+    } else {
+      <span class="cm">// revocar acceso — desvincular usuario pero no eliminarlo</span>
+      if (worker.userId) {
+        await tx.worker.update({ where: { id }, data: { userId: null } })
+      }
+    }
+
+    return findWorkerById(id)
+  })
+}</pre>
+      </div>
+    </div>
+
+    <!-- W4: CONTROLLER -->
+    <div class="section" id="workers-controller">
+      <div class="section-header">
+        <div class="step-number">W4</div>
+        <div>
+          <div class="section-title">Módulo Trabajadores — Controller</div>
+          <div class="section-desc">Extrae datos del request, llama al service y responde con el código HTTP correcto.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/workers/workers.controller.js</span><span class="code-lang">js</span></div>
+        <pre>import {
+  getAllWorkers, getWorkerById, createNewWorker,
+  editWorker, changePosition, changeSalary,
+  exitWorker, reentryWorker, manageSystemAccess
+} from './workers.service.js'
+import {
+  createWorkerSchema, updateWorkerSchema, positionChangeSchema,
+  salaryChangeSchema, exitSchema, reentrySchema,
+  systemAccessSchema, getWorkersQuerySchema
+} from './workers.schema.js'
+import { sanitizeQuery } from '../../shared/utils/sanitize.js'
+
+export async function listWorkersHandler(request, reply) {
+  const query = getWorkersQuerySchema.parse(sanitizeQuery(request.query))
+  request.log.info({ query }, 'Listando trabajadores')
+  const result = await getAllWorkers(query)
+  return reply.send(result)
+}
+
+export async function getWorkerHandler(request, reply) {
+  const worker = await getWorkerById(request.params.id)
+  return reply.send(worker)
+}
+
+export async function createWorkerHandler(request, reply) {
+  const body = createWorkerSchema.parse(request.body)
+  request.log.info({ dni: body.dni, createdBy: request.user.id }, 'Creando trabajador')
+  const worker = await createNewWorker(body, request.user)
+  request.log.info({ workerId: worker.id }, 'Trabajador creado')
+  return reply.code(201).send(worker)
+}
+
+export async function updateWorkerHandler(request, reply) {
+  const body = updateWorkerSchema.parse(request.body)
+  request.log.info({ workerId: request.params.id, updatedBy: request.user.id }, 'Editando trabajador')
+  const worker = await editWorker(request.params.id, body, request.user)
+  return reply.send(worker)
+}
+
+export async function positionChangeHandler(request, reply) {
+  const body = positionChangeSchema.parse(request.body)
+  request.log.info(
+    { workerId: request.params.id, newPosition: body.position, by: request.user.id },
+    'Cambio de cargo'
+  )
+  const worker = await changePosition(request.params.id, body, request.user)
+  return reply.send(worker)
+}
+
+export async function salaryChangeHandler(request, reply) {
+  const body = salaryChangeSchema.parse(request.body)
+  request.log.info(
+    { workerId: request.params.id, newSalary: body.salary, by: request.user.id },
+    'Cambio de salario'
+  )
+  const worker = await changeSalary(request.params.id, body, request.user)
+  return reply.send(worker)
+}
+
+export async function exitWorkerHandler(request, reply) {
+  const body = exitSchema.parse(request.body)
+  request.log.warn(
+    { workerId: request.params.id, type: body.type, by: request.user.id },
+    'Salida de trabajador'
+  )
+  const worker = await exitWorker(request.params.id, body, request.user)
+  return reply.send(worker)
+}
+
+export async function reentryWorkerHandler(request, reply) {
+  const body = reentrySchema.parse(request.body)
+  request.log.info(
+    { workerId: request.params.id, by: request.user.id },
+    'Reingreso de trabajador'
+  )
+  const worker = await reentryWorker(request.params.id, body, request.user)
+  return reply.send(worker)
+}
+
+export async function systemAccessHandler(request, reply) {
+  const body = systemAccessSchema.parse(request.body)
+  request.log.warn(
+    { workerId: request.params.id, grantAccess: body.grantAccess, by: request.user.id },
+    'Cambio de acceso al sistema'
+  )
+  const worker = await manageSystemAccess(request.params.id, body, request.user)
+  return reply.send(worker)
+}</pre>
+      </div>
+    </div>
+
+    <!-- W5: ROUTES -->
+    <div class="section" id="workers-routes">
+      <div class="section-header">
+        <div class="step-number">W5</div>
+        <div>
+          <div class="section-title">Módulo Trabajadores — Routes + Module</div>
+          <div class="section-desc">Endpoints protegidos por rol. ADMIN y RRHH gestionan trabajadores.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/workers/workers.routes.js</span><span class="code-lang">js</span></div>
+        <pre>import { requireAuth } from '../../shared/middlewares/auth.middleware.js'
+import { requireRole } from '../../shared/middlewares/roles.middleware.js'
+import {
+  listWorkersHandler, getWorkerHandler, createWorkerHandler,
+  updateWorkerHandler, positionChangeHandler, salaryChangeHandler,
+  exitWorkerHandler, reentryWorkerHandler, systemAccessHandler
+} from './workers.controller.js'
+
+export async function workersRoutes(fastify) {
+
+  <span class="cm">// GET /api/workers — ADMIN y RRHH pueden listar</span>
+  fastify.get('/', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'RRHH')],
+    schema: { tags: ['Workers'], summary: 'Listar trabajadores' }
+  }, listWorkersHandler)
+
+  <span class="cm">// GET /api/workers/:id — ver detalle con historial</span>
+  fastify.get('/:id', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'RRHH')],
+    schema: { tags: ['Workers'], summary: 'Obtener trabajador por ID' }
+  }, getWorkerHandler)
+
+  <span class="cm">// POST /api/workers — crear nuevo trabajador</span>
+  fastify.post('/', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'RRHH')],
+    schema: { tags: ['Workers'], summary: 'Crear trabajador' }
+  }, createWorkerHandler)
+
+  <span class="cm">// PATCH /api/workers/:id — editar datos básicos</span>
+  <span class="cm">// NO edita cargo, salario ni DNI — esos tienen endpoints propios</span>
+  fastify.patch('/:id', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'RRHH')],
+    schema: { tags: ['Workers'], summary: 'Editar datos del trabajador' }
+  }, updateWorkerHandler)
+
+  <span class="cm">// POST /api/workers/:id/position — cambio de cargo formal</span>
+  fastify.post('/:id/position', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'RRHH')],
+    schema: { tags: ['Workers'], summary: 'Cambio de cargo' }
+  }, positionChangeHandler)
+
+  <span class="cm">// POST /api/workers/:id/salary — cambio de salario</span>
+  fastify.post('/:id/salary', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'RRHH')],
+    schema: { tags: ['Workers'], summary: 'Cambio de salario' }
+  }, salaryChangeHandler)
+
+  <span class="cm">// POST /api/workers/:id/exit — renuncia o despido</span>
+  fastify.post('/:id/exit', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'RRHH')],
+    schema: { tags: ['Workers'], summary: 'Registrar salida del trabajador' }
+  }, exitWorkerHandler)
+
+  <span class="cm">// POST /api/workers/:id/reentry — reingreso</span>
+  fastify.post('/:id/reentry', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'RRHH')],
+    schema: { tags: ['Workers'], summary: 'Reingreso de trabajador' }
+  }, reentryWorkerHandler)
+
+  <span class="cm">// POST /api/workers/:id/access — solo ADMIN gestiona acceso al sistema</span>
+  fastify.post('/:id/access', {
+    preHandler: [requireAuth, requireRole('ADMIN')],
+    schema: { tags: ['Workers'], summary: 'Gestionar acceso al sistema' }
+  }, systemAccessHandler)
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/workers/workers.module.js</span><span class="code-lang">js</span></div>
+        <pre>import fp from 'fastify-plugin'
+import { workersRoutes } from './workers.routes.js'
+
+export const workersModule = fp(async (fastify) => {
+  fastify.register(workersRoutes)
+})</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/app.js — registrar el módulo</span><span class="code-lang">js</span></div>
+        <pre>import { workersModule } from './modules/workers/workers.module.js'
+
+app.register(workersModule, { prefix: '/api/workers' })</pre>
+      </div>
+
+      <h3>// resumen de endpoints</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 endpoints del módulo</span><span class="code-lang">bash</span></div>
+        <pre>GET    /api/workers              → listar (ADMIN, RRHH)
+GET    /api/workers/:id          → detalle + historial (ADMIN, RRHH)
+POST   /api/workers              → crear (ADMIN, RRHH)
+PATCH  /api/workers/:id          → editar datos básicos (ADMIN, RRHH)
+POST   /api/workers/:id/position → cambio de cargo (ADMIN, RRHH)
+POST   /api/workers/:id/salary   → cambio de salario (ADMIN, RRHH)
+POST   /api/workers/:id/exit     → renuncia o despido (ADMIN, RRHH)
+POST   /api/workers/:id/reentry  → reingreso (ADMIN, RRHH)
+POST   /api/workers/:id/access   → acceso al sistema (ADMIN solo)</pre>
+      </div>
+
+      <div class="callout info">
+        <span class="callout-icon">🔒</span>
+        <div>
+          <div class="callout-title">DNI y fecha de ingreso son inmutables</div>
+          <p>El <code>dni</code> y <code>startDate</code> no están en el <code>updateWorkerSchema</code> — es imposible editarlos por la API. Los cambios de cargo y salario tienen sus propios endpoints para que siempre queden registrados en el historial.</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /workers-module -->
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- MÓDULO PRODUCTOS                                     -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="content" id="products-module">
+
+    <!-- P1: SCHEMA + ENTIDADES -->
+    <div class="section" id="products-schema">
+      <div class="section-header">
+        <div class="step-number">P1</div>
+        <div>
+          <div class="section-title">Módulo Productos — Schema + Entidades</div>
+          <div class="section-desc">Productos, descuentos, movimientos de stock y sus relaciones.</div>
+        </div>
+      </div>
+
+      <h3>// 1. entidades del módulo</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 prisma/schema.prisma — productos</span><span class="code-lang">prisma</span></div>
+        <pre><span class="cm">// Entity: Product — representa un producto real</span>
+model Product {
+  id          String          @id @default(uuid())
+  name        String
+  description String?
+  price       Decimal         @db.Decimal(10, 2)
+  stock       Int             @default(0)
+  imageUrl    String?
+  isActive    Boolean         @default(true)    <span class="cm">// desactivar en lugar de eliminar</span>
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  saleItems   SaleItem[]
+  discounts   Discount[]                        <span class="cm">// relación con descuentos</span>
+  stockMovements StockMovement[]                <span class="cm">// historial de movimientos de stock</span>
+
+  @@index([isActive])
+  @@index([name])
+  @@map("products")
+}
+
+<span class="cm">// Entity: Discount — descuentos aplicables a un producto</span>
+model Discount {
+  id          String       @id @default(uuid())
+  productId   String
+  product     Product      @relation(fields: [productId], references: [id])
+  name        String                            <span class="cm">// ej: "Descuento navideño"</span>
+  percentage  Decimal      @db.Decimal(5, 2)   <span class="cm">// ej: 15.00 = 15%</span>
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean      @default(true)
+  createdBy   String                            <span class="cm">// userId de quien lo creó</span>
+  createdAt   DateTime     @default(now())
+
+  @@index([productId])
+  @@index([isActive])
+  @@map("discounts")
+}
+
+<span class="cm">// Entity: StockMovement — historial inmutable de cada cambio de stock</span>
+model StockMovement {
+  id          String            @id @default(uuid())
+  productId   String
+  product     Product           @relation(fields: [productId], references: [id])
+  type        StockMovementType
+  quantity    Int                               <span class="cm">// positivo = entrada, negativo = salida</span>
+  previousStock Int                             <span class="cm">// stock antes del movimiento</span>
+  newStock    Int                               <span class="cm">// stock después del movimiento</span>
+  description String
+  createdBy   String
+  createdAt   DateTime          @default(now())
+
+  @@index([productId])
+  @@index([type])
+  @@map("stock_movements")
+}
+
+enum StockMovementType {
+  SALE        <span class="cm">// descuento por venta</span>
+  RETURN      <span class="cm">// devolución de cliente</span>
+  ADJUSTMENT  <span class="cm">// ajuste manual</span>
+  PURCHASE    <span class="cm">// entrada por compra</span>
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">💻 terminal</span><span class="code-lang">bash</span></div>
+        <pre>npx prisma migrate dev --name add-products-module
+npx prisma generate</pre>
+      </div>
+
+      <h3>// 2. schemas de validación Zod</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/products/products.schema.js</span><span class="code-lang">js</span></div>
+        <pre>import { z } from 'zod'
+
+<span class="cm">// DTO: crear producto</span>
+export const createProductSchema = z.object({
+  name:        z.string().min(2).max(200),
+  description: z.string().max(1000).optional(),
+  price:       z.number().positive('El precio debe ser mayor a 0'),
+  stock:       z.number().int().min(0).default(0)
+})
+
+<span class="cm">// DTO: editar producto — precio se edita aquí pero stock no</span>
+<span class="cm">// el stock solo cambia con movimientos formales</span>
+export const updateProductSchema = z.object({
+  name:        z.string().min(2).max(200).optional(),
+  description: z.string().max(1000).optional(),
+  price:       z.number().positive().optional()
+  <span class="cm">// stock no está — se maneja con stockAdjustmentSchema</span>
+})
+
+<span class="cm">// DTO: ajuste manual de stock — solo ADMIN</span>
+export const stockAdjustmentSchema = z.object({
+  quantity:    z.number().int().refine(n => n !== 0, 'La cantidad no puede ser 0'),
+  type:        z.enum(['ADJUSTMENT', 'PURCHASE', 'RETURN']),
+  description: z.string().min(10, 'Describe el motivo del ajuste')
+})
+
+<span class="cm">// DTO: crear descuento</span>
+export const createDiscountSchema = z.object({
+  name:       z.string().min(2).max(100),
+  percentage: z.number().min(0.01).max(100, 'El descuento no puede superar el 100%'),
+  startDate:  z.coerce.date(),
+  endDate:    z.coerce.date()
+}).refine(d => d.endDate > d.startDate, {
+  message: 'La fecha de fin debe ser posterior a la de inicio',
+  path: ['endDate']
+})
+
+<span class="cm">// DTO: query params</span>
+export const getProductsQuerySchema = z.object({
+  page:     z.coerce.number().int().positive().default(1),
+  limit:    z.coerce.number().int().positive().max(100).default(10),
+  isActive: z.coerce.boolean().optional(),
+  search:   z.string().optional()
+})</pre>
+      </div>
+    </div>
+
+    <!-- P2: REPOSITORY -->
+    <div class="section" id="products-repository">
+      <div class="section-header">
+        <div class="step-number">P2</div>
+        <div>
+          <div class="section-title">Módulo Productos — Repository</div>
+          <div class="section-desc">Consultas a la base de datos para productos, stock y descuentos.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/products/products.repository.js</span><span class="code-lang">js</span></div>
+        <pre>import { prisma } from '../../shared/plugins/prisma.plugin.js'
+
+export async function findAllProducts({ page = 1, limit = 10, isActive, search } = {}) {
+  const skip = (page - 1) * limit
+  const where = {}
+
+  if (isActive !== undefined) where.isActive = isActive
+  if (search) {
+    where.OR = [
+      { name:        { contains: search, mode: 'insensitive' } },
+      { description: { contains: search, mode: 'insensitive' } }
+    ]
+  }
+
+  const [data, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      skip,
+      take: limit,
+      select: {
+        id: true, name: true, description: true,
+        price: true, stock: true, isActive: true,
+        imageUrl: true, createdAt: true,
+        <span class="cm">// incluir descuentos activos junto con el producto</span>
+        discounts: {
+          where: {
+            isActive:  true,
+            startDate: { lte: new Date() },
+            endDate:   { gte: new Date() }
+          },
+          select: { id: true, name: true, percentage: true, endDate: true }
+        }
+      },
+      orderBy: { name: 'asc' }
+    }),
+    prisma.product.count({ where })
+  ])
+
+  return { data, total }
+}
+
+export async function findProductById(id) {
+  return prisma.product.findUnique({
+    where: { id },
+    include: {
+      discounts:      { orderBy: { createdAt: 'desc' } },
+      stockMovements: { orderBy: { createdAt: 'desc' }, take: 20 }
+    }
+  })
+}
+
+export async function createProduct(data) {
+  return prisma.product.create({ data })
+}
+
+export async function updateProduct(id, data) {
+  return prisma.product.update({ where: { id }, data })
+}
+
+export async function createStockMovement(data) {
+  return prisma.stockMovement.create({ data })
+}
+
+export async function createDiscount(data) {
+  return prisma.discount.create({ data })
+}
+
+export async function updateDiscount(id, data) {
+  return prisma.discount.update({ where: { id }, data })
+}</pre>
+      </div>
+    </div>
+
+    <!-- P3: SERVICE -->
+    <div class="section" id="products-service">
+      <div class="section-header">
+        <div class="step-number">P3</div>
+        <div>
+          <div class="section-title">Módulo Productos — Service</div>
+          <div class="section-desc">Reglas de negocio para productos, stock y descuentos.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/products/products.service.js</span><span class="code-lang">js</span></div>
+        <pre>import { prisma } from '../../shared/plugins/prisma.plugin.js'
+import {
+  findAllProducts, findProductById, createProduct,
+  updateProduct, createStockMovement, createDiscount, updateDiscount
+} from './products.repository.js'
+import { buildPagination } from '../../shared/utils/pagination.js'
+
+export async function getAllProducts(query) {
+  const { data, total } = await findAllProducts(query)
+  return buildPagination(data, total, query.page, query.limit)
+}
+
+export async function getProductById(id) {
+  const product = await findProductById(id)
+  if (!product) {
+    const err = new Error('Producto no encontrado')
+    err.statusCode = 404
+    throw err
+  }
+  return product
+}
+
+export async function createNewProduct(data, requestUser) {
+  const product = await createProduct(data)
+
+  <span class="cm">// registrar el ingreso inicial de stock si es mayor a 0</span>
+  if (data.stock > 0) {
+    await createStockMovement({
+      productId:     product.id,
+      type:          'PURCHASE',
+      quantity:      data.stock,
+      previousStock: 0,
+      newStock:      data.stock,
+      description:   'Stock inicial al crear el producto',
+      createdBy:     requestUser.id
+    })
+  }
+
+  return product
+}
+
+export async function editProduct(id, data, requestUser) {
+  const product = await getProductById(id)
+
+  <span class="cm">// regla: solo productos activos se pueden editar</span>
+  if (!product.isActive) {
+    const err = new Error('No se puede editar un producto desactivado')
+    err.statusCode = 409
+    throw err
+  }
+
+  return updateProduct(id, data)
+}
+
+export async function adjustStock(id, data, requestUser) {
+  const product = await getProductById(id)
+
+  if (!product.isActive) {
+    const err = new Error('No se puede ajustar el stock de un producto desactivado')
+    err.statusCode = 409
+    throw err
+  }
+
+  const newStock = product.stock + data.quantity
+
+  <span class="cm">// regla: el stock no puede quedar negativo</span>
+  if (newStock < 0) {
+    const err = new Error(`Stock insuficiente. Stock actual: ${product.stock}, ajuste solicitado: ${data.quantity}`)
+    err.statusCode = 409
+    throw err
+  }
+
+  return prisma.$transaction(async (tx) => {
+    <span class="cm">// registrar el movimiento antes de actualizar</span>
+    await tx.stockMovement.create({
+      data: {
+        productId:     id,
+        type:          data.type,
+        quantity:      data.quantity,
+        previousStock: product.stock,
+        newStock,
+        description:   data.description,
+        createdBy:     requestUser.id
+      }
+    })
+
+    <span class="cm">// actualizar el stock del producto</span>
+    return tx.product.update({
+      where: { id },
+      data:  { stock: newStock }
+    })
+  })
+}
+
+export async function deactivateProduct(id, requestUser) {
+  const product = await getProductById(id)
+
+  if (!product.isActive) {
+    const err = new Error('El producto ya está desactivado')
+    err.statusCode = 409
+    throw err
+  }
+
+  <span class="cm">// desactivar — nunca eliminar para mantener historial</span>
+  return updateProduct(id, { isActive: false })
+}
+
+export async function reactivateProduct(id, requestUser) {
+  const product = await getProductById(id)
+
+  if (product.isActive) {
+    const err = new Error('El producto ya está activo')
+    err.statusCode = 409
+    throw err
+  }
+
+  return updateProduct(id, { isActive: true })
+}
+
+export async function addDiscount(productId, data, requestUser) {
+  const product = await getProductById(productId)
+
+  if (!product.isActive) {
+    const err = new Error('No se pueden agregar descuentos a un producto desactivado')
+    err.statusCode = 409
+    throw err
+  }
+
+  <span class="cm">// regla: no puede haber dos descuentos activos que se solapen en fechas</span>
+  const overlapping = await prisma.discount.findFirst({
+    where: {
+      productId,
+      isActive: true,
+      AND: [
+        { startDate: { lte: data.endDate } },
+        { endDate:   { gte: data.startDate } }
+      ]
+    }
+  })
+
+  if (overlapping) {
+    const err = new Error(`Ya existe un descuento activo en ese período: "${overlapping.name}"`)
+    err.statusCode = 409
+    throw err
+  }
+
+  return createDiscount({ ...data, productId, createdBy: requestUser.id })
+}
+
+export async function deactivateDiscount(discountId, requestUser) {
+  const discount = await prisma.discount.findUnique({ where: { id: discountId } })
+
+  if (!discount) {
+    const err = new Error('Descuento no encontrado')
+    err.statusCode = 404
+    throw err
+  }
+
+  if (!discount.isActive) {
+    const err = new Error('El descuento ya está desactivado')
+    err.statusCode = 409
+    throw err
+  }
+
+  return updateDiscount(discountId, { isActive: false })
+}</pre>
+      </div>
+    </div>
+
+    <!-- P4: CONTROLLER -->
+    <div class="section" id="products-controller">
+      <div class="section-header">
+        <div class="step-number">P4</div>
+        <div>
+          <div class="section-title">Módulo Productos — Controller</div>
+          <div class="section-desc">Handlers HTTP para productos, stock y descuentos.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/products/products.controller.js</span><span class="code-lang">js</span></div>
+        <pre>import {
+  getAllProducts, getProductById, createNewProduct,
+  editProduct, adjustStock, deactivateProduct,
+  reactivateProduct, addDiscount, deactivateDiscount
+} from './products.service.js'
+import {
+  createProductSchema, updateProductSchema, stockAdjustmentSchema,
+  createDiscountSchema, getProductsQuerySchema
+} from './products.schema.js'
+import { sanitizeQuery } from '../../shared/utils/sanitize.js'
+
+export async function listProductsHandler(request, reply) {
+  const query = getProductsQuerySchema.parse(sanitizeQuery(request.query))
+  const result = await getAllProducts(query)
+  return reply.send(result)
+}
+
+export async function getProductHandler(request, reply) {
+  const product = await getProductById(request.params.id)
+  return reply.send(product)
+}
+
+export async function createProductHandler(request, reply) {
+  const body = createProductSchema.parse(request.body)
+  request.log.info({ name: body.name, createdBy: request.user.id }, 'Creando producto')
+  const product = await createNewProduct(body, request.user)
+  request.log.info({ productId: product.id }, 'Producto creado')
+  return reply.code(201).send(product)
+}
+
+export async function updateProductHandler(request, reply) {
+  const body = updateProductSchema.parse(request.body)
+  request.log.info({ productId: request.params.id, updatedBy: request.user.id }, 'Editando producto')
+  const product = await editProduct(request.params.id, body, request.user)
+  return reply.send(product)
+}
+
+export async function stockAdjustmentHandler(request, reply) {
+  const body = stockAdjustmentSchema.parse(request.body)
+  request.log.warn(
+    { productId: request.params.id, quantity: body.quantity, type: body.type, by: request.user.id },
+    'Ajuste de stock'
+  )
+  const product = await adjustStock(request.params.id, body, request.user)
+  return reply.send(product)
+}
+
+export async function deactivateProductHandler(request, reply) {
+  request.log.warn({ productId: request.params.id, by: request.user.id }, 'Desactivando producto')
+  const product = await deactivateProduct(request.params.id, request.user)
+  return reply.send(product)
+}
+
+export async function reactivateProductHandler(request, reply) {
+  request.log.info({ productId: request.params.id, by: request.user.id }, 'Reactivando producto')
+  const product = await reactivateProduct(request.params.id, request.user)
+  return reply.send(product)
+}
+
+export async function addDiscountHandler(request, reply) {
+  const body = createDiscountSchema.parse(request.body)
+  request.log.info(
+    { productId: request.params.id, discount: body.name, by: request.user.id },
+    'Agregando descuento'
+  )
+  const discount = await addDiscount(request.params.id, body, request.user)
+  return reply.code(201).send(discount)
+}
+
+export async function deactivateDiscountHandler(request, reply) {
+  request.log.warn(
+    { discountId: request.params.discountId, by: request.user.id },
+    'Desactivando descuento'
+  )
+  const discount = await deactivateDiscount(request.params.discountId, request.user)
+  return reply.send(discount)
+}</pre>
+      </div>
+    </div>
+
+    <!-- P5: ROUTES -->
+    <div class="section" id="products-routes">
+      <div class="section-header">
+        <div class="step-number">P5</div>
+        <div>
+          <div class="section-title">Módulo Productos — Routes + Module</div>
+          <div class="section-desc">Endpoints públicos para consulta y protegidos por rol para gestión.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/products/products.routes.js</span><span class="code-lang">js</span></div>
+        <pre>import { requireAuth } from '../../shared/middlewares/auth.middleware.js'
+import { requireRole } from '../../shared/middlewares/roles.middleware.js'
+import {
+  listProductsHandler, getProductHandler, createProductHandler,
+  updateProductHandler, stockAdjustmentHandler, deactivateProductHandler,
+  reactivateProductHandler, addDiscountHandler, deactivateDiscountHandler
+} from './products.controller.js'
+
+export async function productsRoutes(fastify) {
+
+  <span class="cm">// GET /api/products — público, cualquiera puede ver productos activos</span>
+  fastify.get('/', {
+    schema: { tags: ['Products'], summary: 'Listar productos' }
+  }, listProductsHandler)
+
+  <span class="cm">// GET /api/products/:id — público</span>
+  fastify.get('/:id', {
+    schema: { tags: ['Products'], summary: 'Obtener producto por ID' }
+  }, getProductHandler)
+
+  <span class="cm">// POST /api/products — solo ADMIN crea productos</span>
+  fastify.post('/', {
+    preHandler: [requireAuth, requireRole('ADMIN')],
+    schema: { tags: ['Products'], summary: 'Crear producto' }
+  }, createProductHandler)
+
+  <span class="cm">// PATCH /api/products/:id — ADMIN edita nombre, descripción y precio</span>
+  <span class="cm">// el stock NO se edita aquí — tiene endpoint propio</span>
+  fastify.patch('/:id', {
+    preHandler: [requireAuth, requireRole('ADMIN')],
+    schema: { tags: ['Products'], summary: 'Editar producto' }
+  }, updateProductHandler)
+
+  <span class="cm">// POST /api/products/:id/stock — ajuste manual de stock</span>
+  <span class="cm">// ADJUSTMENT, PURCHASE y RETURN van aquí — SALE lo hace el módulo ventas</span>
+  fastify.post('/:id/stock', {
+    preHandler: [requireAuth, requireRole('ADMIN')],
+    schema: { tags: ['Products'], summary: 'Ajuste de stock' }
+  }, stockAdjustmentHandler)
+
+  <span class="cm">// PATCH /api/products/:id/deactivate — desactivar producto</span>
+  fastify.patch('/:id/deactivate', {
+    preHandler: [requireAuth, requireRole('ADMIN')],
+    schema: { tags: ['Products'], summary: 'Desactivar producto' }
+  }, deactivateProductHandler)
+
+  <span class="cm">// PATCH /api/products/:id/reactivate — reactivar producto</span>
+  fastify.patch('/:id/reactivate', {
+    preHandler: [requireAuth, requireRole('ADMIN')],
+    schema: { tags: ['Products'], summary: 'Reactivar producto' }
+  }, reactivateProductHandler)
+
+  <span class="cm">// POST /api/products/:id/discounts — agregar descuento (ADMIN, PRICING)</span>
+  fastify.post('/:id/discounts', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'PRICING')],
+    schema: { tags: ['Products'], summary: 'Agregar descuento' }
+  }, addDiscountHandler)
+
+  <span class="cm">// PATCH /api/products/:id/discounts/:discountId/deactivate</span>
+  fastify.patch('/:id/discounts/:discountId/deactivate', {
+    preHandler: [requireAuth, requireRole('ADMIN', 'PRICING')],
+    schema: { tags: ['Products'], summary: 'Desactivar descuento' }
+  }, deactivateDiscountHandler)
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/modules/products/products.module.js</span><span class="code-lang">js</span></div>
+        <pre>import fp from 'fastify-plugin'
+import { productsRoutes } from './products.routes.js'
+
+export const productsModule = fp(async (fastify) => {
+  fastify.register(productsRoutes)
+})</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 src/app.js — registrar el módulo</span><span class="code-lang">js</span></div>
+        <pre>import { productsModule } from './modules/products/products.module.js'
+
+app.register(productsModule, { prefix: '/api/products' })</pre>
+      </div>
+
+      <h3>// resumen de endpoints</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-filename">📄 endpoints del módulo</span><span class="code-lang">bash</span></div>
+        <pre>GET    /api/products                               → listar (público)
+GET    /api/products/:id                           → detalle (público)
+POST   /api/products                               → crear (ADMIN)
+PATCH  /api/products/:id                           → editar (ADMIN)
+POST   /api/products/:id/stock                     → ajuste stock (ADMIN)
+PATCH  /api/products/:id/deactivate                → desactivar (ADMIN)
+PATCH  /api/products/:id/reactivate                → reactivar (ADMIN)
+POST   /api/products/:id/discounts                 → crear descuento (ADMIN, PRICING)
+PATCH  /api/products/:id/discounts/:id/deactivate  → desactivar descuento (ADMIN, PRICING)</pre>
+      </div>
+
+      <div class="callout info">
+        <span class="callout-icon">💡</span>
+        <div>
+          <div class="callout-title">El stock de ventas lo maneja el módulo ventas</div>
+          <p>Cuando se crea una venta, el módulo de ventas descuenta el stock directamente en su transacción usando <code>tx.product.update</code>. El módulo de productos solo maneja ajustes manuales (compras, devoluciones, correcciones). Así cada módulo mantiene su responsabilidad clara.</p>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /products-module -->
+
 </main>
 
 <script>
