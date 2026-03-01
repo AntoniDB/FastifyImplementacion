@@ -138,12 +138,58 @@
   .progress-bar { position: fixed; top: 0; left: 270px; right: 0; height: 2px; background: var(--border); z-index: 200; }
   .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); width: 0%; transition: width 0.1s; }
 
+  /* SEARCH */
+  .search-wrapper { padding: 0 16px 16px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+  .search-box { position: relative; }
+  .search-input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 36px 8px 12px; color: var(--text);
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .search-input::placeholder { color: var(--muted); }
+  .search-input:focus { border-color: var(--accent); }
+  .search-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+  .search-clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; cursor: pointer; display: none; background: none; border: none; line-height: 1; }
+  .search-clear:hover { color: var(--text); }
+
+  /* SEARCH RESULTS DROPDOWN */
+  .search-results {
+    position: fixed; left: 270px; top: 0; width: min(560px, calc(100vw - 270px));
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6); z-index: 500;
+    max-height: 70vh; overflow-y: auto; display: none;
+    margin: 12px;
+  }
+  .search-results.visible { display: block; }
+  .search-results-header { padding: 12px 16px; font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .search-result-item { padding: 12px 16px; cursor: pointer; border-bottom: 1px solid rgba(42,42,64,0.5); transition: background 0.15s; }
+  .search-result-item:hover, .search-result-item.selected { background: var(--surface2); }
+  .search-result-item:last-child { border-bottom: none; }
+  .result-section { font-size: 11px; color: var(--accent); font-family: 'JetBrains Mono', monospace; margin-bottom: 4px; }
+  .result-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .result-snippet { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .result-snippet mark { background: rgba(124,106,255,0.25); color: var(--accent); border-radius: 2px; padding: 0 2px; font-style: normal; }
+  .search-empty { padding: 32px 16px; text-align: center; color: var(--muted); font-size: 13px; }
+  .search-shortcut { font-size: 10px; color: var(--muted); font-family: 'JetBrains Mono', monospace; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; }
+
+  /* NAV ITEM HIDDEN BY SEARCH FILTER */
+  .nav-item.hidden { display: none; }
+  .nav-section.hidden { display: none; }
+  .search-no-nav { display: none; padding: 8px 24px; font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+  .search-no-nav.visible { display: block; }
+
+  /* SEARCH OVERLAY */
+  .search-overlay { position: fixed; inset: 0; z-index: 499; display: none; }
+  .search-overlay.visible { display: block; }
+
   @media (max-width: 900px) {
     .sidebar { display: none; }
     .main { margin-left: 0; }
     .hero, .content { padding-left: 24px; padding-right: 24px; }
     .progress-bar { left: 0; }
     .grid-2, .compare { grid-template-columns: 1fr; }
+    .search-results { left: 0; width: 100vw; margin: 0; border-radius: 0; }
   }
 </style>
 </head>
@@ -151,12 +197,40 @@
 
 <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
 
+<!-- SEARCH OVERLAY -->
+<div class="search-overlay" id="searchOverlay" onclick="closeSearch()"></div>
+
+<!-- SEARCH RESULTS -->
+<div class="search-results" id="searchResults">
+  <div class="search-results-header">
+    <span id="searchResultsCount">0 resultados</span>
+    <span class="search-shortcut">↑↓ navegar · Enter abrir · Esc cerrar</span>
+  </div>
+  <div id="searchResultsList"></div>
+</div>
+
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-logo">
     <div class="logo-text">⚡ Fastify API</div>
     <div class="logo-sub">// JS funcional · sin clases</div>
   </div>
+
+  <div class="search-wrapper">
+    <div class="search-box">
+      <input
+        type="text"
+        class="search-input"
+        id="searchInput"
+        placeholder="Buscar... (/ para enfocar)"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <span class="search-icon" id="searchIcon">⌕</span>
+      <button class="search-clear" id="searchClear" onclick="clearSearch()">×</button>
+    </div>
+  </div>
+  <div class="search-no-nav" id="searchNoNav">Sin resultados en navegación</div>
 
   <div class="nav-section">Fundamentos</div>
   <a class="nav-item active" href="#inicio-arq" onclick="setActive(this)"><span class="step-badge">→</span> Introducción</a>
@@ -6999,6 +7073,221 @@ PATCH  /api/products/:id/discounts/:id/deactivate  → desactivar descuento (ADM
     sections.forEach(s => { if (window.scrollY >= s.offsetTop - 120) current = s.id })
     navItems.forEach(n => n.classList.toggle('active', n.getAttribute('href') === '#' + current))
   })
-</script>
+
+  // ─── SEARCH ENGINE ───────────────────────────────────────────
+  const searchInput   = document.getElementById('searchInput')
+  const searchResults = document.getElementById('searchResults')
+  const searchList    = document.getElementById('searchResultsList')
+  const searchCount   = document.getElementById('searchResultsCount')
+  const searchOverlay = document.getElementById('searchOverlay')
+  const searchClear   = document.getElementById('searchClear')
+  const searchIcon    = document.getElementById('searchIcon')
+  const searchNoNav   = document.getElementById('searchNoNav')
+
+  let selectedIndex = -1
+  let currentResults = []
+
+  // Build search index from all sections
+  function buildIndex() {
+    const index = []
+    document.querySelectorAll('.section').forEach(section => {
+      const id = section.id
+      if (!id) return
+
+      const titleEl  = section.querySelector('.section-title')
+      const descEl   = section.querySelector('.section-desc')
+      const stepEl   = section.querySelector('.step-number')
+      const title    = titleEl  ? titleEl.innerText  : ''
+      const desc     = descEl   ? descEl.innerText   : ''
+      const step     = stepEl   ? stepEl.innerText   : ''
+
+      // Collect all text content from code blocks and paragraphs
+      const codeBlocks = Array.from(section.querySelectorAll('pre')).map(p => p.innerText).join(' ')
+      const paragraphs = Array.from(section.querySelectorAll('p, h3')).map(p => p.innerText).join(' ')
+      const fullText   = `${title} ${desc} ${paragraphs} ${codeBlocks}`.toLowerCase()
+
+      index.push({ id, title, desc, step, fullText, paragraphs })
+    })
+    return index
+  }
+
+  const searchIndex = buildIndex()
+
+  function highlight(text, query) {
+    if (!query) return text
+    const words = query.trim().split(/\s+/).filter(Boolean)
+    let result = text
+    words.forEach(word => {
+      const re = new RegExp(`(${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+      result = result.replace(re, '<mark>$1</mark>')
+    })
+    return result
+  }
+
+  function getSnippet(text, query, maxLen = 120) {
+    const words = query.trim().split(/\s+/).filter(Boolean)
+    const lowerText = text.toLowerCase()
+    let pos = -1
+    for (const word of words) {
+      pos = lowerText.indexOf(word.toLowerCase())
+      if (pos !== -1) break
+    }
+    if (pos === -1) return text.slice(0, maxLen) + '...'
+    const start = Math.max(0, pos - 40)
+    const end   = Math.min(text.length, pos + maxLen - 40)
+    const snippet = (start > 0 ? '...' : '') + text.slice(start, end) + (end < text.length ? '...' : '')
+    return highlight(snippet, query)
+  }
+
+  function doSearch(query) {
+    const q = query.trim().toLowerCase()
+    if (!q) { closeSearch(); filterNav(''); return }
+
+    // Filter sidebar nav
+    filterNav(q)
+
+    // Search content
+    const words = q.split(/\s+/).filter(Boolean)
+    const results = searchIndex
+      .map(item => {
+        let score = 0
+        words.forEach(word => {
+          if (item.title.toLowerCase().includes(word))      score += 10
+          if (item.desc.toLowerCase().includes(word))       score += 5
+          if (item.fullText.includes(word))                 score += 1
+        })
+        return { ...item, score }
+      })
+      .filter(r => r.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 12)
+
+    currentResults = results
+    selectedIndex  = -1
+
+    if (results.length === 0) {
+      searchList.innerHTML = `<div class="search-empty">Sin resultados para "<strong>${query}</strong>"</div>`
+      searchCount.textContent = '0 resultados'
+    } else {
+      searchCount.textContent = `${results.length} resultado${results.length !== 1 ? 's' : ''}`
+      searchList.innerHTML = results.map((r, i) => `
+        <div class="search-result-item" data-id="${r.id}" onclick="goToResult('${r.id}')">
+          <div class="result-section">Paso ${r.step} ${r.step ? '·' : ''} ${highlight(r.title, query)}</div>
+          <div class="result-snippet">${getSnippet(r.paragraphs, query)}</div>
+        </div>
+      `).join('')
+    }
+
+    searchResults.classList.add('visible')
+    searchOverlay.classList.add('visible')
+    searchClear.style.display  = 'block'
+    searchIcon.style.display   = 'none'
+  }
+
+  function filterNav(q) {
+    const navSections = document.querySelectorAll('.nav-section')
+    const navLinks    = document.querySelectorAll('.nav-item')
+
+    if (!q) {
+      navLinks.forEach(n => n.classList.remove('hidden'))
+      navSections.forEach(n => n.classList.remove('hidden'))
+      searchNoNav.classList.remove('visible')
+      return
+    }
+
+    let anyVisible = false
+    navLinks.forEach(link => {
+      const text = link.innerText.toLowerCase()
+      const matches = q.split(/\s+/).every(word => text.includes(word))
+      link.classList.toggle('hidden', !matches)
+      if (matches) anyVisible = true
+    })
+
+    // Hide section headers if all items below are hidden
+    navSections.forEach(section => {
+      let next = section.nextElementSibling
+      let hasVisible = false
+      while (next && !next.classList.contains('nav-section')) {
+        if (next.classList.contains('nav-item') && !next.classList.contains('hidden')) {
+          hasVisible = true; break
+        }
+        next = next.nextElementSibling
+      }
+      section.classList.toggle('hidden', !hasVisible)
+    })
+
+    searchNoNav.classList.toggle('visible', !anyVisible)
+  }
+
+  function goToResult(id) {
+    const target = document.getElementById(id)
+    if (target) {
+      closeSearch()
+      clearSearch()
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      // Briefly highlight the section
+      target.style.transition = 'box-shadow 0.3s'
+      target.style.boxShadow  = '0 0 0 2px var(--accent)'
+      setTimeout(() => { target.style.boxShadow = '' }, 1500)
+    }
+  }
+
+  function closeSearch() {
+    searchResults.classList.remove('visible')
+    searchOverlay.classList.remove('visible')
+    selectedIndex = -1
+  }
+
+  function clearSearch() {
+    searchInput.value = ''
+    searchClear.style.display = 'none'
+    searchIcon.style.display  = 'block'
+    filterNav('')
+    closeSearch()
+    searchNoNav.classList.remove('visible')
+  }
+
+  // Keyboard navigation in results
+  searchInput.addEventListener('keydown', e => {
+    const items = searchList.querySelectorAll('.search-result-item')
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      selectedIndex = Math.min(selectedIndex + 1, items.length - 1)
+      items.forEach((item, i) => item.classList.toggle('selected', i === selectedIndex))
+      if (items[selectedIndex]) items[selectedIndex].scrollIntoView({ block: 'nearest' })
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      selectedIndex = Math.max(selectedIndex - 1, -1)
+      items.forEach((item, i) => item.classList.toggle('selected', i === selectedIndex))
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      if (selectedIndex >= 0 && currentResults[selectedIndex]) {
+        goToResult(currentResults[selectedIndex].id)
+      } else if (currentResults.length > 0) {
+        goToResult(currentResults[0].id)
+      }
+    } else if (e.key === 'Escape') {
+      closeSearch()
+      searchInput.blur()
+    }
+  })
+
+  searchInput.addEventListener('input', e => {
+    doSearch(e.target.value)
+  })
+
+  searchInput.addEventListener('focus', () => {
+    if (searchInput.value.trim()) doSearch(searchInput.value)
+  })
+
+  // Press / to focus search
+  document.addEventListener('keydown', e => {
+    if (e.key === '/' && document.activeElement !== searchInput) {
+      e.preventDefault()
+      searchInput.focus()
+      searchInput.select()
+    }
+    if (e.key === 'Escape') closeSearch()
+  })
 </body>
 </html>
